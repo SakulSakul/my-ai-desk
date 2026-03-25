@@ -1,0 +1,32 @@
+# ============================================
+# My AI Desk - 매일 아침 텔레그램 알림
+# 매일 한국시간 오전 8시에 자동 실행
+# ============================================
+
+name: Daily Telegram Alarm
+
+on:
+  schedule:
+    # UTC 23:00 = KST 08:00 (다음날 아침)
+    - cron: '0 23 * * *'
+  workflow_dispatch:  # 수동 실행 버튼도 추가
+
+jobs:
+  send-alarm:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Send Telegram Notification
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python telegram_notify.py
