@@ -1,14 +1,12 @@
 import streamlit as st
 from supabase import create_client
 from datetime import datetime, timedelta, timezone
+import calendar
 import json
 
 # ============================================
 # 설정 (Streamlit Secrets 또는 직접 입력)
 # ============================================
-# Streamlit Community Cloud 배포 시: .streamlit/secrets.toml 에 아래 값을 넣으세요
-# 로컬 테스트 시: 아래 fallback 값을 직접 수정하세요
-
 SUPABASE_URL = st.secrets.get("SUPABASE_URL", "여기에_수파베이스_URL")
 SUPABASE_KEY = st.secrets.get("SUPABASE_KEY", "여기에_수파베이스_ANON_KEY")
 APP_PASSWORD = st.secrets.get("APP_PASSWORD", "1234")
@@ -35,33 +33,23 @@ st.set_page_config(
 )
 
 # ============================================
-# 커스텀 CSS (모바일 반응형 + 깔끔한 UI)
+# 커스텀 CSS
 # ============================================
 st.markdown("""
 <style>
-    /* 전체 폰트 */
     @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
     html, body, [class*="css"] { font-family: 'Noto Sans KR', sans-serif; }
-
-    /* 상단 여백 줄이기 */
     .block-container { padding-top: 1.5rem; }
 
     /* 카드 스타일 */
     .task-card {
         background: linear-gradient(135deg, #667eea11, #764ba211);
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 1rem 1.2rem;
-        margin-bottom: 0.8rem;
-        transition: all 0.2s;
+        border: 1px solid #e2e8f0; border-radius: 12px;
+        padding: 1rem 1.2rem; margin-bottom: 0.8rem; transition: all 0.2s;
     }
     .task-card:hover { border-color: #667eea; box-shadow: 0 2px 12px rgba(102,126,234,0.15); }
-
     .task-title { font-size: 1.05rem; font-weight: 600; color: #1a202c; margin-bottom: 0.3rem; }
     .task-meta { font-size: 0.82rem; color: #718096; }
-    .task-desc { font-size: 0.88rem; color: #4a5568; margin-top: 0.5rem;
-                 white-space: pre-wrap; line-height: 1.6; }
-
     .overdue { border-left: 4px solid #e53e3e; }
     .today { border-left: 4px solid #ed8936; }
     .upcoming { border-left: 4px solid #48bb78; }
@@ -79,18 +67,84 @@ st.markdown("""
     /* 사이드바 메모 */
     .memo-item {
         background: #fffff0; border: 1px solid #ecc94b44;
-        border-radius: 8px; padding: 0.7rem; margin-bottom: 0.5rem;
-        font-size: 0.85rem;
+        border-radius: 8px; padding: 0.7rem; margin-bottom: 0.5rem; font-size: 0.85rem;
     }
     .memo-time { font-size: 0.72rem; color: #a0aec0; }
 
-    /* 모바일 대응 */
+    /* ===== 달력 스타일 ===== */
+    .cal-container {
+        background: white; border: 1px solid #e2e8f0; border-radius: 12px;
+        padding: 1rem; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+    .cal-header {
+        display: flex; justify-content: center; align-items: center;
+        gap: 1.5rem; margin-bottom: 0.8rem;
+    }
+    .cal-header-month { font-size: 1.15rem; font-weight: 700; color: #2d3748; min-width: 140px; text-align: center; }
+
+    .cal-grid {
+        display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+    }
+    .cal-dow {
+        text-align: center; font-size: 0.75rem; font-weight: 600;
+        color: #a0aec0; padding: 0.3rem 0;
+    }
+    .cal-dow-sun { color: #e53e3e; }
+    .cal-dow-sat { color: #4299e1; }
+
+    .cal-day {
+        position: relative; text-align: center; padding: 0.35rem 0.1rem;
+        border-radius: 8px; min-height: 2.8rem; font-size: 0.85rem; color: #4a5568;
+    }
+    .cal-day-empty { }
+    .cal-day-today {
+        background: #667eea; color: white; font-weight: 700; border-radius: 8px;
+    }
+    .cal-day-sun { color: #e53e3e; }
+    .cal-day-sat { color: #4299e1; }
+    .cal-day-today.cal-day-sun, .cal-day-today.cal-day-sat { color: white; }
+
+    .cal-dots {
+        display: flex; justify-content: center; gap: 2px; margin-top: 2px;
+    }
+    .cal-dot {
+        width: 5px; height: 5px; border-radius: 50%;
+    }
+    .cal-dot-overdue { background: #e53e3e; }
+    .cal-dot-today { background: #ed8936; }
+    .cal-dot-upcoming { background: #48bb78; }
+    .cal-dot-completed { background: #a0aec0; }
+
+    /* 주간 뷰 */
+    .week-day-card {
+        background: white; border: 1px solid #e2e8f0; border-radius: 10px;
+        padding: 0.7rem; margin-bottom: 0.4rem;
+    }
+    .week-day-card-today {
+        background: linear-gradient(135deg, #667eea08, #764ba208);
+        border: 1.5px solid #667eea;
+    }
+    .week-day-header {
+        font-size: 0.82rem; font-weight: 600; color: #2d3748; margin-bottom: 0.4rem;
+    }
+    .week-day-header-today { color: #667eea; }
+    .week-task-item {
+        font-size: 0.8rem; color: #4a5568; padding: 0.15rem 0;
+        border-left: 3px solid #e2e8f0; padding-left: 0.5rem; margin-bottom: 0.2rem;
+    }
+    .week-task-item-overdue { border-left-color: #e53e3e; }
+    .week-task-item-today { border-left-color: #ed8936; }
+    .week-task-item-upcoming { border-left-color: #48bb78; }
+    .week-no-task { font-size: 0.78rem; color: #cbd5e0; font-style: italic; }
+
+    /* 모바일 */
     @media (max-width: 768px) {
         .block-container { padding: 0.8rem; }
         .stat-number { font-size: 1.5rem; }
+        .cal-day { min-height: 2.2rem; font-size: 0.78rem; }
+        .cal-dot { width: 4px; height: 4px; }
     }
 
-    /* 버튼 간격 */
     .stButton > button { border-radius: 8px; }
 </style>
 """, unsafe_allow_html=True)
@@ -101,7 +155,6 @@ st.markdown("""
 def check_password():
     if "authenticated" not in st.session_state:
         st.session_state.authenticated = False
-
     if st.session_state.authenticated:
         return True
 
@@ -134,25 +187,30 @@ def now_kst():
     return datetime.now(KST)
 
 def format_dt(dt_str):
-    """ISO 문자열을 보기 좋은 한국 시간 문자열로 변환"""
     if not dt_str:
         return ""
     try:
         dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
-        dt_kst = dt.astimezone(KST)
-        return dt_kst.strftime("%m/%d(%a) %H:%M")
+        return dt.astimezone(KST).strftime("%m/%d(%a) %H:%M")
     except:
         return dt_str
 
+def parse_deadline_kst(dt_str):
+    """마감일 문자열을 KST datetime으로 변환"""
+    if not dt_str:
+        return None
+    try:
+        return datetime.fromisoformat(dt_str.replace("Z", "+00:00")).astimezone(KST)
+    except:
+        return None
+
 def get_urgency(deadline_str):
-    """마감일 기준 긴급도 판별"""
     if not deadline_str:
         return "upcoming", ""
     try:
         deadline = datetime.fromisoformat(deadline_str.replace("Z", "+00:00")).astimezone(KST)
         now = now_kst()
         diff = deadline - now
-
         if diff.total_seconds() < 0:
             return "overdue", "⏰ 기한 초과"
         elif diff.days == 0:
@@ -166,7 +224,6 @@ def get_urgency(deadline_str):
         return "upcoming", ""
 
 def calc_duration(created_str, completed_str):
-    """소요 시간 계산"""
     if not created_str or not completed_str:
         return ""
     try:
@@ -194,7 +251,6 @@ def load_tasks(show_completed=False, search_query=""):
     query = query.order("deadline", desc=False)
     result = query.execute()
     tasks = result.data or []
-
     if search_query:
         q = search_query.lower()
         tasks = [t for t in tasks if
@@ -203,27 +259,28 @@ def load_tasks(show_completed=False, search_query=""):
                  q in (t.get("category") or "").lower()]
     return tasks
 
+def load_all_tasks_for_calendar():
+    """달력용: 완료/미완료 모두 가져오기"""
+    result = supabase.table("tasks").select("*").order("deadline", desc=False).execute()
+    return result.data or []
+
 def add_task(title, description, deadline, category, alarm_before_min):
     data = {
-        "title": title,
-        "description": description,
+        "title": title, "description": description,
         "deadline": deadline.isoformat() if deadline else None,
-        "category": category,
-        "alarm_before_min": alarm_before_min,
+        "category": category, "alarm_before_min": alarm_before_min,
         "is_completed": False,
     }
     supabase.table("tasks").insert(data).execute()
 
 def complete_task(task_id):
     supabase.table("tasks").update({
-        "is_completed": True,
-        "completed_at": now_kst().isoformat()
+        "is_completed": True, "completed_at": now_kst().isoformat()
     }).eq("id", task_id).execute()
 
 def uncomplete_task(task_id):
     supabase.table("tasks").update({
-        "is_completed": False,
-        "completed_at": None
+        "is_completed": False, "completed_at": None
     }).eq("id", task_id).execute()
 
 def delete_task(task_id):
@@ -231,8 +288,7 @@ def delete_task(task_id):
 
 def update_task(task_id, title, description, deadline, category):
     data = {
-        "title": title,
-        "description": description,
+        "title": title, "description": description,
         "deadline": deadline.isoformat() if deadline else None,
         "category": category,
     }
@@ -320,23 +376,125 @@ TEMPLATES = {
 }
 
 # ============================================
+# 달력 헬퍼 함수
+# ============================================
+def build_task_date_map(tasks):
+    """업무를 날짜별로 분류한 dict 반환: { 'YYYY-MM-DD': [task, ...] }"""
+    date_map = {}
+    for t in tasks:
+        dl = parse_deadline_kst(t.get("deadline"))
+        if dl:
+            key = dl.strftime("%Y-%m-%d")
+            if key not in date_map:
+                date_map[key] = []
+            date_map[key].append(t)
+    return date_map
+
+def render_monthly_calendar(year, month, task_date_map, today_str):
+    """월간 달력 HTML 생성"""
+    cal = calendar.Calendar(firstweekday=6)  # 일요일 시작
+    days_in_month = list(cal.itermonthdays2(year, month))
+
+    dow_names = ["일", "월", "화", "수", "목", "금", "토"]
+    html = '<div class="cal-grid">'
+
+    # 요일 헤더
+    for i, d in enumerate(dow_names):
+        cls = "cal-dow"
+        if i == 0: cls += " cal-dow-sun"
+        if i == 6: cls += " cal-dow-sat"
+        html += f'<div class="{cls}">{d}</div>'
+
+    # 날짜 셀
+    for day, weekday in days_in_month:
+        if day == 0:
+            html += '<div class="cal-day cal-day-empty"></div>'
+            continue
+
+        date_key = f"{year}-{month:02d}-{day:02d}"
+        adjusted_wd = (weekday + 1) % 7  # 0=일, 6=토
+
+        cls = "cal-day"
+        if date_key == today_str:
+            cls += " cal-day-today"
+        elif adjusted_wd == 0:
+            cls += " cal-day-sun"
+        elif adjusted_wd == 6:
+            cls += " cal-day-sat"
+
+        # 해당 날짜의 업무 dots
+        dots_html = ""
+        if date_key in task_date_map:
+            dots = []
+            for t in task_date_map[date_key][:3]:  # 최대 3개 dot
+                if t.get("is_completed"):
+                    dots.append('<span class="cal-dot cal-dot-completed"></span>')
+                else:
+                    urg, _ = get_urgency(t.get("deadline"))
+                    dot_cls = f"cal-dot cal-dot-{urg}"
+                    dots.append(f'<span class="{dot_cls}"></span>')
+            dots_html = f'<div class="cal-dots">{"".join(dots)}</div>'
+
+        html += f'<div class="{cls}">{day}{dots_html}</div>'
+
+    html += '</div>'
+    return html
+
+def render_weekly_view(tasks, task_date_map):
+    """주간 뷰 HTML 생성"""
+    now = now_kst()
+    today = now.date()
+    # 이번 주 월요일 ~ 일요일
+    weekday = today.weekday()  # 0=월
+    monday = today - timedelta(days=weekday)
+
+    dow_names = ["월", "화", "수", "목", "금", "토", "일"]
+    html = ""
+
+    for i in range(7):
+        d = monday + timedelta(days=i)
+        date_key = d.strftime("%Y-%m-%d")
+        is_today = (d == today)
+
+        card_cls = "week-day-card-today" if is_today else ""
+        header_cls = "week-day-header-today" if is_today else ""
+        today_badge = " · 오늘" if is_today else ""
+
+        html += f'<div class="week-day-card {card_cls}">'
+        html += f'<div class="week-day-header {header_cls}">{d.strftime("%m/%d")} ({dow_names[i]}){today_badge}</div>'
+
+        day_tasks = task_date_map.get(date_key, [])
+        if day_tasks:
+            for t in day_tasks[:5]:
+                if t.get("is_completed"):
+                    html += f'<div class="week-task-item" style="text-decoration:line-through; color:#a0aec0;">✅ {t["title"]}</div>'
+                else:
+                    urg, _ = get_urgency(t.get("deadline"))
+                    item_cls = f"week-task-item week-task-item-{urg}"
+                    dl = parse_deadline_kst(t.get("deadline"))
+                    time_str = dl.strftime("%H:%M") if dl else ""
+                    html += f'<div class="{item_cls}">{t["title"]} <span style="color:#a0aec0; font-size:0.72rem;">{time_str}</span></div>'
+            if len(day_tasks) > 5:
+                html += f'<div class="week-no-task">외 {len(day_tasks)-5}건 더</div>'
+        else:
+            html += '<div class="week-no-task">일정 없음</div>'
+
+        html += '</div>'
+
+    return html
+
+# ============================================
 # 사이드바: 퀵 메모 + 검색
 # ============================================
 with st.sidebar:
     st.markdown("### 📝 퀵 메모")
-    memo_input = st.text_area(
-        "메모",
-        placeholder="번뜩이는 아이디어, URL, 메모...",
-        height=80,
-        label_visibility="collapsed",
-    )
+    memo_input = st.text_area("메모", placeholder="번뜩이는 아이디어, URL, 메모...", height=80, label_visibility="collapsed")
     if st.button("메모 저장", use_container_width=True, type="primary"):
         if memo_input.strip():
             add_memo(memo_input.strip())
             st.toast("✅ 메모 저장 완료!")
             st.rerun()
 
-    # 저장된 메모 목록
     memos = load_memos()
     if memos:
         st.markdown(f"<div style='font-size:0.8rem; color:#a0aec0; margin:0.5rem 0;'>최근 메모 ({len(memos)}건)</div>", unsafe_allow_html=True)
@@ -354,16 +512,12 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown("### 🔍 업무 검색")
-    search_query = st.text_input(
-        "검색",
-        placeholder="제목, 내용, 카테고리 검색...",
-        label_visibility="collapsed",
-    )
+    search_query = st.text_input("검색", placeholder="제목, 내용, 카테고리 검색...", label_visibility="collapsed")
 
     st.markdown("---")
     st.markdown(
         "<div style='text-align:center; font-size:0.75rem; color:#a0aec0;'>"
-        "My AI Desk v1.0<br>Phase 1</div>",
+        "My AI Desk v1.1<br>Phase 1 + Calendar</div>",
         unsafe_allow_html=True,
     )
 
@@ -394,37 +548,101 @@ today_count = sum(1 for t in all_tasks if get_urgency(t.get("deadline"))[0] == "
 
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    st.markdown(f"""<div class="stat-box">
-        <div class="stat-number" style="color:#4299e1;">{len(all_tasks)}</div>
-        <div class="stat-label">진행 중</div>
-    </div>""", unsafe_allow_html=True)
+    st.markdown(f'<div class="stat-box"><div class="stat-number" style="color:#4299e1;">{len(all_tasks)}</div><div class="stat-label">진행 중</div></div>', unsafe_allow_html=True)
 with col2:
-    st.markdown(f"""<div class="stat-box">
-        <div class="stat-number" style="color:#e53e3e;">{overdue_count}</div>
-        <div class="stat-label">기한 초과</div>
-    </div>""", unsafe_allow_html=True)
+    st.markdown(f'<div class="stat-box"><div class="stat-number" style="color:#e53e3e;">{overdue_count}</div><div class="stat-label">기한 초과</div></div>', unsafe_allow_html=True)
 with col3:
-    st.markdown(f"""<div class="stat-box">
-        <div class="stat-number" style="color:#ed8936;">{today_count}</div>
-        <div class="stat-label">오늘 마감</div>
-    </div>""", unsafe_allow_html=True)
+    st.markdown(f'<div class="stat-box"><div class="stat-number" style="color:#ed8936;">{today_count}</div><div class="stat-label">오늘 마감</div></div>', unsafe_allow_html=True)
 with col4:
-    st.markdown(f"""<div class="stat-box">
-        <div class="stat-number" style="color:#48bb78;">{completed_today}</div>
-        <div class="stat-label">오늘 완료</div>
-    </div>""", unsafe_allow_html=True)
+    st.markdown(f'<div class="stat-box"><div class="stat-number" style="color:#48bb78;">{completed_today}</div><div class="stat-label">오늘 완료</div></div>', unsafe_allow_html=True)
 
 st.markdown("<div style='height:0.8rem;'></div>", unsafe_allow_html=True)
+
+# ============================================
+# 📅 달력 섹션
+# ============================================
+with st.expander("📅 달력", expanded=True):
+    cal_tasks = load_all_tasks_for_calendar()
+    task_date_map = build_task_date_map(cal_tasks)
+    now = now_kst()
+    today_str = now.strftime("%Y-%m-%d")
+
+    # 월 이동 상태 관리
+    if "cal_year" not in st.session_state:
+        st.session_state.cal_year = now.year
+    if "cal_month" not in st.session_state:
+        st.session_state.cal_month = now.month
+
+    # 월간/주간 탭
+    cal_tab1, cal_tab2 = st.tabs(["📆 월간", "📋 주간"])
+
+    with cal_tab1:
+        # 월 이동 버튼
+        nav1, nav2, nav3, nav4 = st.columns([1, 3, 3, 1])
+        with nav1:
+            if st.button("◀", key="cal_prev", use_container_width=True):
+                if st.session_state.cal_month == 1:
+                    st.session_state.cal_month = 12
+                    st.session_state.cal_year -= 1
+                else:
+                    st.session_state.cal_month -= 1
+                st.rerun()
+        with nav2:
+            st.markdown(
+                f"<div style='text-align:right; font-size:1.1rem; font-weight:700; color:#2d3748; padding:0.3rem 0;'>"
+                f"{st.session_state.cal_year}년 {st.session_state.cal_month}월</div>",
+                unsafe_allow_html=True
+            )
+        with nav3:
+            if st.session_state.cal_year != now.year or st.session_state.cal_month != now.month:
+                if st.button("오늘", key="cal_today", use_container_width=True):
+                    st.session_state.cal_year = now.year
+                    st.session_state.cal_month = now.month
+                    st.rerun()
+        with nav4:
+            if st.button("▶", key="cal_next", use_container_width=True):
+                if st.session_state.cal_month == 12:
+                    st.session_state.cal_month = 1
+                    st.session_state.cal_year += 1
+                else:
+                    st.session_state.cal_month += 1
+                st.rerun()
+
+        # 월간 달력 렌더링
+        cal_html = render_monthly_calendar(
+            st.session_state.cal_year, st.session_state.cal_month,
+            task_date_map, today_str
+        )
+        st.markdown(f'<div class="cal-container">{cal_html}</div>', unsafe_allow_html=True)
+
+        # 범례
+        st.markdown("""
+        <div style="display:flex; gap:1rem; justify-content:center; margin-top:0.6rem; font-size:0.72rem; color:#a0aec0;">
+            <span><span class="cal-dot cal-dot-overdue" style="display:inline-block;"></span> 기한초과</span>
+            <span><span class="cal-dot cal-dot-today" style="display:inline-block;"></span> 오늘마감</span>
+            <span><span class="cal-dot cal-dot-upcoming" style="display:inline-block;"></span> 예정</span>
+            <span><span class="cal-dot cal-dot-completed" style="display:inline-block;"></span> 완료</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with cal_tab2:
+        # 주간 뷰
+        weekday = now.date().weekday()
+        monday = now.date() - timedelta(days=weekday)
+        sunday = monday + timedelta(days=6)
+        st.markdown(
+            f"<div style='text-align:center; font-size:1rem; font-weight:600; color:#2d3748; margin-bottom:0.5rem;'>"
+            f"📋 {monday.strftime('%m/%d')} ~ {sunday.strftime('%m/%d')} 이번 주</div>",
+            unsafe_allow_html=True
+        )
+        week_html = render_weekly_view(cal_tasks, task_date_map)
+        st.markdown(week_html, unsafe_allow_html=True)
 
 # ============================================
 # 업무 등록 폼
 # ============================================
 with st.expander("➕ 새 업무 등록", expanded=False):
-    # 템플릿 선택
-    template_name = st.selectbox(
-        "템플릿 선택 (선택사항)",
-        ["직접 입력"] + list(TEMPLATES.keys()),
-    )
+    template_name = st.selectbox("템플릿 선택 (선택사항)", ["직접 입력"] + list(TEMPLATES.keys()))
 
     if template_name != "직접 입력":
         tmpl = TEMPLATES[template_name]
@@ -437,12 +655,8 @@ with st.expander("➕ 새 업무 등록", expanded=False):
         default_cat = "일반"
 
     new_title = st.text_input("업무명 *", value=default_title, placeholder="예: 3월 경영검토 보고서 작성")
-    new_desc = st.text_area(
-        "상세 내용",
-        value=default_desc,
-        height=200,
-        placeholder="마크다운 체크리스트, 메모, 담당자 정보 등 자유롭게 작성\n\n- [ ] 할 일 1\n- [ ] 할 일 2",
-    )
+    new_desc = st.text_area("상세 내용", value=default_desc, height=200,
+        placeholder="마크다운 체크리스트, 메모, 담당자 정보 등 자유롭게 작성\n\n- [ ] 할 일 1\n- [ ] 할 일 2")
 
     col_a, col_b = st.columns(2)
     with col_a:
@@ -457,8 +671,7 @@ with st.expander("➕ 새 업무 등록", expanded=False):
         new_category = st.selectbox("카테고리", categories, index=cat_index)
     with col_d:
         new_alarm = st.selectbox("알람 (향후 연동)", [60, 10, 30, 120, 1440], format_func=lambda x: {
-            10: "10분 전", 30: "30분 전", 60: "1시간 전",
-            120: "2시간 전", 1440: "1일 전"
+            10: "10분 전", 30: "30분 전", 60: "1시간 전", 120: "2시간 전", 1440: "1일 전"
         }.get(x, f"{x}분 전"))
 
     if st.button("📌 업무 등록", use_container_width=True, type="primary"):
@@ -469,7 +682,6 @@ with st.expander("➕ 새 업무 등록", expanded=False):
                     deadline = datetime.combine(new_date, new_time).replace(tzinfo=KST)
                 else:
                     deadline = datetime.combine(new_date, datetime.min.time().replace(hour=18)).replace(tzinfo=KST)
-
             add_task(new_title.strip(), new_desc.strip(), deadline, new_category, new_alarm)
             st.toast("✅ 업무가 등록되었습니다!")
             st.balloons()
@@ -505,7 +717,6 @@ else:
             </div>
         </div>""", unsafe_allow_html=True)
 
-        # 상세 내용 & 액션 버튼
         with st.expander(f"상세 보기 · {task['title']}", expanded=False):
             if task.get("description"):
                 st.markdown(task["description"])
@@ -529,7 +740,6 @@ else:
                     st.toast("업무가 삭제되었습니다.")
                     st.rerun()
 
-            # 수정 모드
             if st.session_state.get(f"editing_{task['id']}", False):
                 st.markdown("---")
                 st.markdown("**✏️ 업무 수정**")
