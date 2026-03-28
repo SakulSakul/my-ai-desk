@@ -1375,23 +1375,24 @@ else:
             elapsed = calc_duration_minutes(task["timer_started_at"], task["timer_ended_at"])
             timer_html = f'<span style="font-size:0.75rem; color:var(--text-muted);">⏱ {format_minutes(elapsed)}</span>'
 
-        st.markdown(f"""<div class="task-card {urgency}">
-            <div class="task-header">
-                <span class="task-title">{pri_icon} {task['title']}</span>
-                <div class="task-badges">
-                    <span class="badge badge-priority-{pri}">{pri}</span>
-                    <span class="badge">{task.get('category','기타')}</span>
-                    {tag_badges}
-                </div>
-            </div>
-            <div class="task-meta">
-                <span>{('📅 ' + format_dt(task['deadline'])) if task.get('deadline') else '📅 마감일 미지정'}</span>
-                {urgency_html}
-                {progress_html}
-                {timer_html}
-                {f'<span>🔁 반복</span>' if recurrence else ''}
-            </div>
-        </div>""", unsafe_allow_html=True)
+        card_html = (
+            f'<div class="task-card {urgency}">'
+            f'<div class="task-header">'
+            f'<span class="task-title">{pri_icon} {task["title"]}</span>'
+            f'<div class="task-badges">'
+            f'<span class="badge badge-priority-{pri}">{pri}</span>'
+            f'<span class="badge">{task.get("category","기타")}</span>'
+            f'{tag_badges}'
+            f'</div></div>'
+            f'<div class="task-meta">'
+            f'<span>{("📅 " + format_dt(task["deadline"])) if task.get("deadline") else "📅 마감일 미지정"}</span>'
+            f'{urgency_html}'
+            f'{progress_html}'
+            f'{timer_html}'
+            f'{"<span>🔁 반복</span>" if recurrence else ""}'
+            f'</div></div>'
+        )
+        st.markdown(card_html, unsafe_allow_html=True)
 
         with st.expander(f"상세 보기 · {task['title']}", expanded=False):
             if task.get("description"):
@@ -1537,20 +1538,21 @@ with st.expander("✅ 완료된 업무 보기"):
             timer_mins = calc_duration_minutes(ct.get("timer_started_at"), ct.get("timer_ended_at"))
             timer_str = f" · ⏱ {format_minutes(timer_mins)}" if timer_mins > 0 else ""
 
-            st.markdown(f"""<div class="task-card completed-card">
-                <div class="task-header">
-                    <span class="task-title" style="text-decoration: line-through;">{pri_icon} {ct['title']}</span>
-                    <div class="task-badges">
-                        <span class="badge">{ct.get('category','기타')}</span>
-                        {tag_badges}
-                    </div>
-                </div>
-                <div class="task-meta">
-                    <span>완료: {format_dt(ct['completed_at'])}</span>
-                    {f'<span>⏱ {duration}</span>' if duration else ''}
-                    <span>{timer_str}</span>
-                </div>
-            </div>""", unsafe_allow_html=True)
+            ct_card = (
+                f'<div class="task-card completed-card">'
+                f'<div class="task-header">'
+                f'<span class="task-title" style="text-decoration: line-through;">{pri_icon} {ct["title"]}</span>'
+                f'<div class="task-badges">'
+                f'<span class="badge">{ct.get("category","기타")}</span>'
+                f'{tag_badges}'
+                f'</div></div>'
+                f'<div class="task-meta">'
+                f'<span>완료: {format_dt(ct["completed_at"])}</span>'
+                f'{"<span>⏱ " + duration + "</span>" if duration else ""}'
+                f'<span>{timer_str}</span>'
+                f'</div></div>'
+            )
+            st.markdown(ct_card, unsafe_allow_html=True)
 
             col_r1, col_r2 = st.columns([1, 1])
             with col_r1:
