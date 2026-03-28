@@ -340,20 +340,32 @@ def get_urgency(deadline_str: Optional[str]) -> tuple[str, str]:
     deadline = parse_deadline_kst(deadline_str)
     if not deadline:
         return "upcoming", ""
-    diff = deadline - now_kst()
+    now = now_kst()
+    diff = deadline - now
     total_seconds = diff.total_seconds()
+
+    # 기한 초과
     if total_seconds < 0:
         overdue_hours = abs(total_seconds) / 3600
         if overdue_hours < 24:
             return "overdue", f"⏰ {int(overdue_hours)}시간 초과"
         return "overdue", f"⏰ {int(overdue_hours / 24)}일 초과"
-    elif diff.days == 0:
+
+    # 날짜 기준으로 오늘/내일/이후 판단
+    deadline_date = deadline.date()
+    today_date = now.date()
+    day_diff = (deadline_date - today_date).days
+
+    if day_diff == 0:
+        # 오늘 마감
         hours = diff.seconds // 3600
         if hours == 0:
             return "today", f"⚡ {diff.seconds // 60}분 남음"
         return "today", f"⚡ {hours}시간 남음"
+    elif day_diff == 1:
+        return "upcoming", f"📅 내일 마감"
     else:
-        return "upcoming", f"📅 {diff.days}일 남음"
+        return "upcoming", f"📅 {day_diff}일 남음"
 
 def calc_duration(created_str: Optional[str], completed_str: Optional[str]) -> str:
     if not created_str or not completed_str:
