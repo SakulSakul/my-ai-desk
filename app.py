@@ -111,7 +111,7 @@ st.markdown("""
 
     /* Streamlit 기본 스타일 오버라이드 */
     .block-container {
-        padding-top: 2rem;
+        padding-top: 3.5rem;
         max-width: 1100px;
     }
     .stApp > header { background: transparent; }
@@ -826,7 +826,7 @@ def build_monthly_report(completed, all_tasks):
 # ============================================
 def check_password():
     if st.session_state.authenticated: return True
-    st.markdown('<div class="login-wrap"><h1>My AI Desk</h1><p>CSR Team · Task Manager</p></div>', unsafe_allow_html=True)
+    st.markdown('<div class="login-wrap"><h1>My AI Desk</h1><p>CSR · Task Manager</p></div>', unsafe_allow_html=True)
     c1, c2, c3 = st.columns([1,2,1])
     with c2:
         pwd = st.text_input("비밀번호", type="password", key="pwd_input")
@@ -883,13 +883,13 @@ with st.sidebar:
     else: st.session_state.filter_tag = ""
     st.session_state.sort_by = st.radio("정렬", ["마감일순","우선순위순","등록순"], index=["마감일순","우선순위순","등록순"].index(st.session_state.sort_by), horizontal=True)
     st.markdown("---")
-    st.markdown('<div style="text-align:center;font-size:0.7rem;color:var(--gray-400);letter-spacing:1px;">MY AI DESK v3.0<br>CSR TEAM EDITION</div>', unsafe_allow_html=True)
+    st.markdown('<div style="text-align:center;font-size:0.7rem;color:var(--gray-400);letter-spacing:1px;">MY AI DESK v3.0<br>CSR EDITION</div>', unsafe_allow_html=True)
 
 
 # ============================================
 # 메인 헤더
 # ============================================
-st.markdown('<div class="app-header"><div class="app-header-sub">CSR Team · Task Manager</div><h1>My AI Desk</h1></div>', unsafe_allow_html=True)
+st.markdown('<div class="app-header"><div class="app-header-sub">CSR · Task Manager</div><h1>My AI Desk</h1></div>', unsafe_allow_html=True)
 
 
 # ============================================
