@@ -496,6 +496,7 @@ def add_task(
         "category": category, "priority": priority,
         "recurrence": recurrence, "tags": tags,
         "is_completed": False,
+        "timer_started_at": now_kst().isoformat(),
     }
     supabase.table("tasks").insert(data).execute()
 
