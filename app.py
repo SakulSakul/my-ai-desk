@@ -1258,64 +1258,55 @@ with st.expander("📅 달력", expanded=True):
 # ============================================
 # ➕ 새 업무 등록
 # ============================================
-# 폼 초기화 플래그 처리
-if st.session_state.get("clear_form"):
-    for k in ["new_title", "new_desc", "new_tags"]:
-        if k in st.session_state:
-            del st.session_state[k]
-    st.session_state.clear_form = False
-
 with st.expander("➕ 새 업무 등록", expanded=False):
-    new_title = st.text_input("업무명 *", placeholder="예: 공정거래 자율준수 점검, 동반성장 협력사 간담회", key="new_title")
-    new_desc = st.text_area(
-        "상세 내용", height=200,
-        placeholder="마크다운 체크리스트, 메모, 담당자 정보 등 자유롭게 작성\n\n- [ ] 할 일 1\n- [ ] 할 일 2",
-        key="new_desc",
-    )
+    with st.form("add_task_form", clear_on_submit=True):
+        new_title = st.text_input("업무명 *", placeholder="예: 공정거래 자율준수 점검, 동반성장 협력사 간담회")
+        new_desc = st.text_area(
+            "상세 내용", height=200,
+            placeholder="마크다운 체크리스트, 메모, 담당자 정보 등 자유롭게 작성\n\n- [ ] 할 일 1\n- [ ] 할 일 2",
+        )
 
-    reg_col1, reg_col2 = st.columns(2)
-    with reg_col1:
-        new_date = st.date_input("마감일", value=None)
-    with reg_col2:
-        new_time = st.time_input("마감 시간", value=None)
+        reg_col1, reg_col2 = st.columns(2)
+        with reg_col1:
+            new_date = st.date_input("마감일", value=None)
+        with reg_col2:
+            new_time = st.time_input("마감 시간", value=None)
 
-    reg_col3, reg_col4, reg_col5 = st.columns(3)
-    with reg_col3:
-        categories_no_all = [c for c in CATEGORIES if c != "전체"]
-        new_category = st.selectbox("카테고리", categories_no_all, index=0)
-    with reg_col4:
-        priority_list = list(PRIORITIES.keys())
-        new_priority = st.selectbox("우선순위", priority_list, index=1,
-            format_func=lambda x: f"{PRIORITIES[x]} {x}")
-    with reg_col5:
-        recurrence_keys = list(RECURRENCE_OPTIONS.keys())
-        new_recurrence_label = st.selectbox("반복", recurrence_keys, index=0)
-        new_recurrence = RECURRENCE_OPTIONS[new_recurrence_label]
+        reg_col3, reg_col4, reg_col5 = st.columns(3)
+        with reg_col3:
+            categories_no_all = [c for c in CATEGORIES if c != "전체"]
+            new_category = st.selectbox("카테고리", categories_no_all, index=0)
+        with reg_col4:
+            priority_list = list(PRIORITIES.keys())
+            new_priority = st.selectbox("우선순위", priority_list, index=1,
+                format_func=lambda x: f"{PRIORITIES[x]} {x}")
+        with reg_col5:
+            recurrence_keys = list(RECURRENCE_OPTIONS.keys())
+            new_recurrence_label = st.selectbox("반복", recurrence_keys, index=0)
+            new_recurrence = RECURRENCE_OPTIONS[new_recurrence_label]
 
-    # 태그 입력
-    new_tags_input = st.text_input(
-        "🏷️ 태그",
-        placeholder="#급함 #보고용 #협력사  (콤마 또는 공백으로 구분)",
-        key="new_tags",
-    )
-    new_tags = ", ".join(parse_tags(new_tags_input))
+        new_tags_input = st.text_input(
+            "🏷️ 태그",
+            placeholder="#급함 #보고용 #협력사  (콤마 또는 공백으로 구분)",
+        )
+        new_tags = ", ".join(parse_tags(new_tags_input))
 
-    if st.button("📌 업무 등록", use_container_width=True, type="primary"):
-        if new_title.strip():
-            deadline = None
-            if new_date:
-                t = new_time if new_time else dt_time(18, 0)
-                deadline = datetime.combine(new_date, t).replace(tzinfo=KST)
-            add_task(
-                new_title.strip(), new_desc.strip(), deadline,
-                new_category, new_priority, new_recurrence, new_tags,
-            )
-            st.toast("✅ 업무가 등록되었습니다!")
-            st.session_state.clear_form = True
-            st.balloons()
-            st.rerun()
-        else:
-            st.warning("업무명을 입력해주세요.")
+        submitted = st.form_submit_button("📌 업무 등록", use_container_width=True, type="primary")
+        if submitted:
+            if new_title.strip():
+                deadline = None
+                if new_date:
+                    t = new_time if new_time else dt_time(18, 0)
+                    deadline = datetime.combine(new_date, t).replace(tzinfo=KST)
+                add_task(
+                    new_title.strip(), new_desc.strip(), deadline,
+                    new_category, new_priority, new_recurrence, new_tags,
+                )
+                st.toast("✅ 업무가 등록되었습니다!")
+                st.balloons()
+                st.rerun()
+            else:
+                st.warning("업무명을 입력해주세요.")
 
 
 # ============================================
