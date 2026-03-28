@@ -1258,11 +1258,19 @@ with st.expander("📅 달력", expanded=True):
 # ============================================
 # ➕ 새 업무 등록
 # ============================================
+# 폼 초기화 플래그 처리
+if st.session_state.get("clear_form"):
+    for k in ["new_title", "new_desc", "new_tags"]:
+        if k in st.session_state:
+            del st.session_state[k]
+    st.session_state.clear_form = False
+
 with st.expander("➕ 새 업무 등록", expanded=False):
-    new_title = st.text_input("업무명 *", placeholder="예: 공정거래 자율준수 점검, 동반성장 협력사 간담회")
+    new_title = st.text_input("업무명 *", placeholder="예: 공정거래 자율준수 점검, 동반성장 협력사 간담회", key="new_title")
     new_desc = st.text_area(
         "상세 내용", height=200,
         placeholder="마크다운 체크리스트, 메모, 담당자 정보 등 자유롭게 작성\n\n- [ ] 할 일 1\n- [ ] 할 일 2",
+        key="new_desc",
     )
 
     reg_col1, reg_col2 = st.columns(2)
@@ -1288,6 +1296,7 @@ with st.expander("➕ 새 업무 등록", expanded=False):
     new_tags_input = st.text_input(
         "🏷️ 태그",
         placeholder="#급함 #보고용 #협력사  (콤마 또는 공백으로 구분)",
+        key="new_tags",
     )
     new_tags = ", ".join(parse_tags(new_tags_input))
 
@@ -1302,6 +1311,7 @@ with st.expander("➕ 새 업무 등록", expanded=False):
                 new_category, new_priority, new_recurrence, new_tags,
             )
             st.toast("✅ 업무가 등록되었습니다!")
+            st.session_state.clear_form = True
             st.balloons()
             st.rerun()
         else:
