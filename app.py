@@ -68,11 +68,16 @@ st.set_page_config(
 # ============================================
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;900&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@400;600;700;900&display=swap');
+    @font-face {
+        font-family: 'Pretendard';
+        src: url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
+    }
+    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
 
     :root {
         --font-serif: 'Noto Serif KR', Georgia, serif;
-        --font-sans: 'Noto Sans KR', -apple-system, sans-serif;
+        --font-sans: 'Pretendard Variable', 'Pretendard', -apple-system, sans-serif;
         --black: #1a1a1a;
         --dark: #333333;
         --gray-800: #444444;
@@ -292,7 +297,7 @@ st.markdown("""
     }
     .chart-bar-label {
         font-size: 0.78rem; font-weight: 500; color: var(--gray-600);
-        min-width: 60px; text-align: right;
+        min-width: 75px; text-align: right; white-space: nowrap;
     }
     .chart-bar-track {
         flex: 1; height: 20px; background: var(--gray-100);
@@ -341,7 +346,7 @@ st.markdown("""
 
     /* ── 시간 차트 ── */
     .time-chart-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.4rem; }
-    .time-chart-label { font-size: 0.75rem; min-width: 60px; text-align: right; color: var(--gray-600); }
+    .time-chart-label { font-size: 0.75rem; min-width: 75px; text-align: right; color: var(--gray-600); white-space: nowrap; }
     .time-chart-bar {
         height: 16px; display: flex; align-items: center;
         padding: 0 6px; font-size: 0.65rem; color: var(--white); font-weight: 500;
@@ -473,7 +478,7 @@ st.markdown("""
     }
     @media (max-width: 480px) {
         .stat-grid { grid-template-columns: repeat(2, 1fr); }
-        .chart-bar-label, .time-chart-label { min-width: 50px; font-size: 0.7rem; }
+        .chart-bar-label, .time-chart-label { min-width: 65px; font-size: 0.7rem; white-space: nowrap; }
     }
 </style>
 """, unsafe_allow_html=True)
