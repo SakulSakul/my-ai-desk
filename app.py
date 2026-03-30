@@ -958,8 +958,19 @@ if st.session_state.stat_filter:
             cat = t.get("category","기타")
             is_done = t.get("is_completed", False)
             cls = "completed-card" if is_done else u
-            title_style = 'style="text-decoration:line-through;"' if is_done else ""
-            st.markdown(f'<div class="task-card {cls}"><div class="task-header"><span class="task-title" {title_style}>{pi} {t["title"]}</span><div class="task-badges"><span class="badge">{cat}</span></div></div><div class="task-meta"><span>{("📅 "+format_dt(t["deadline"])) if t.get("deadline") else ""}</span>{("<span class=\\"urgency-tag urgency-"+u+"\\">"+ul+"</span>") if ul else ""}{(" · 완료: "+format_dt(t["completed_at"])) if is_done else ""}</div></div>', unsafe_allow_html=True)
+            title_style = ' style="text-decoration:line-through;"' if is_done else ""
+            urg_span = f'<span class="urgency-tag urgency-{u}">{ul}</span>' if ul else ""
+            done_span = f" · 완료: {format_dt(t['completed_at'])}" if is_done else ""
+            dl_span = ("📅 " + format_dt(t["deadline"])) if t.get("deadline") else ""
+            sf_card = (
+                f'<div class="task-card {cls}"><div class="task-header">'
+                f'<span class="task-title"{title_style}>{pi} {t["title"]}</span>'
+                f'<div class="task-badges"><span class="badge">{cat}</span></div>'
+                f'</div><div class="task-meta">'
+                f'<span>{dl_span}</span>{urg_span}{done_span}'
+                f'</div></div>'
+            )
+            st.markdown(sf_card, unsafe_allow_html=True)
     else:
         st.caption("해당 업무가 없습니다.")
     st.markdown("---")
