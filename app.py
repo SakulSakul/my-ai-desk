@@ -1194,70 +1194,68 @@ for tab_idx, cat_tab in enumerate(cat_tabs):
                 card = (f'<div class="task-card {urgency}"><div class="task-header"><span class="task-title">{pi} {task["title"]}</span><div class="task-badges"><span class="badge badge-priority-{pri}">{pri}</span><span class="badge">{task.get("category","기타")}</span>{tag_badges}</div></div><div class="task-meta"><span>{("📅 "+format_dt(task["deadline"])) if task.get("deadline") else "📅 마감일 미지정"}</span>{urg_html}{prog_html}{timer_html}{"<span>🔁 반복</span>" if rec else ""}</div></div>')
                 st.markdown(card, unsafe_allow_html=True)
 
-                # 원클릭 완료 + 상세 보기 (같은 줄)
-                qc1, qc2 = st.columns([1, 7])
-                with qc1:
-                    if st.button("✅", key=f"quick_{tab_category}_{task['id']}", help="완료 처리"):
+                # 원클릭 완료 + 상세 버튼
+                ac1, ac2, ac3 = st.columns([1, 1, 4])
+                with ac1:
+                    if st.button("✅ 완료", key=f"quick_{tab_category}_{task['id']}", use_container_width=True):
                         complete_task(task)
                         st.toast("🎉 완료! 다음 회차 생성됨" if rec else "🎉 수고하셨습니다!")
                         st.balloons(); st.rerun()
+                with ac2:
+                    if st.button("✏️ 수정", key=f"edit_{tab_category}_{task['id']}", use_container_width=True):
+                        st.session_state[f"editing_{task['id']}"] = True; st.rerun()
 
-                with qc2:
-                    with st.expander(f"상세 · {task['title']}", expanded=False):
-                        if task.get("description"): st.markdown(task["description"])
-                        else: st.caption("상세 내용 없음")
-                        if tags: st.markdown("🏷️ " + " ".join(f"`#{t}`" for t in tags))
+                with st.expander(f"상세 · {task['title']}", expanded=False):
+                    if task.get("description"): st.markdown(task["description"])
+                    else: st.caption("상세 내용 없음")
+                    if tags: st.markdown("🏷️ " + " ".join(f"`#{t}`" for t in tags))
 
-                        st.markdown("**⏱️ 소요시간 트래킹**")
-                        tc1,tc2,tc3 = st.columns(3)
-                        hs = bool(task.get("timer_started_at")); he = bool(task.get("timer_ended_at")); ir = hs and not he
-                        with tc1:
-                            if not hs:
-                                if st.button("▶️ 시작", key=f"ts_{tab_category}_{task['id']}", use_container_width=True): start_timer(task["id"]); st.toast("⏱ 시작!"); st.rerun()
-                            elif ir: st.markdown(f"🔴 **진행 중** · {format_minutes(calc_duration_minutes(task['timer_started_at'],now_kst().isoformat()))}")
-                            else: st.markdown(f"✅ **기록 완료** · {format_minutes(calc_duration_minutes(task['timer_started_at'],task['timer_ended_at']))}")
-                        with tc2:
-                            if ir:
-                                if st.button("⏹ 정지", key=f"tp_{tab_category}_{task['id']}", use_container_width=True): stop_timer(task["id"]); st.toast("⏱ 정지!"); st.rerun()
-                        with tc3:
-                            if hs:
-                                if st.button("🔄 초기화", key=f"tr_{tab_category}_{task['id']}", use_container_width=True): reset_timer(task["id"]); st.toast("초기화!"); st.rerun()
+                    st.markdown("**⏱️ 소요시간 트래킹**")
+                    tc1,tc2,tc3 = st.columns(3)
+                    hs = bool(task.get("timer_started_at")); he = bool(task.get("timer_ended_at")); ir = hs and not he
+                    with tc1:
+                        if not hs:
+                            if st.button("▶️ 시작", key=f"ts_{tab_category}_{task['id']}", use_container_width=True): start_timer(task["id"]); st.toast("⏱ 시작!"); st.rerun()
+                        elif ir: st.markdown(f"🔴 **진행 중** · {format_minutes(calc_duration_minutes(task['timer_started_at'],now_kst().isoformat()))}")
+                        else: st.markdown(f"✅ **기록 완료** · {format_minutes(calc_duration_minutes(task['timer_started_at'],task['timer_ended_at']))}")
+                    with tc2:
+                        if ir:
+                            if st.button("⏹ 정지", key=f"tp_{tab_category}_{task['id']}", use_container_width=True): stop_timer(task["id"]); st.toast("⏱ 정지!"); st.rerun()
+                    with tc3:
+                        if hs:
+                            if st.button("🔄 초기화", key=f"tr_{tab_category}_{task['id']}", use_container_width=True): reset_timer(task["id"]); st.toast("초기화!"); st.rerun()
 
+                    st.markdown("---")
+                    if st.button("🗑️ 삭제", key=f"del_{tab_category}_{task['id']}"): delete_task(task["id"]); st.toast("삭제됨."); st.rerun()
+
+                    if st.session_state.get(f"editing_{task['id']}"):
                         st.markdown("---")
-                        bc1,bc2 = st.columns([1,1])
-                        with bc1:
-                            if st.button("✏️ 수정", key=f"edit_{tab_category}_{task['id']}", use_container_width=True): st.session_state[f"editing_{task['id']}"]=True; st.rerun()
-                        with bc2:
-                            if st.button("🗑️ 삭제", key=f"del_{tab_category}_{task['id']}", use_container_width=True): delete_task(task["id"]); st.toast("삭제됨."); st.rerun()
-
-                        if st.session_state.get(f"editing_{task['id']}"):
-                            st.markdown("---")
-                            et = st.text_input("업무명", value=task["title"], key=f"et_{tab_category}_{task['id']}")
-                            ed = st.text_area("상세", value=task.get("description",""), height=150, key=f"ed_{tab_category}_{task['id']}")
-                            dl = parse_deadline_kst(task.get("deadline"))
-                            if dl: edt=st.date_input("마감일",value=dl.date(),key=f"edt_{tab_category}_{task['id']}"); etm=st.time_input("시간",value=dl.time(),key=f"etm_{tab_category}_{task['id']}")
-                            else: edt=st.date_input("마감일",value=None,key=f"edt_{tab_category}_{task['id']}"); etm=st.time_input("시간",value=None,key=f"etm_{tab_category}_{task['id']}")
-                            ec1,ec2,ec3 = st.columns(3)
-                            cna = [c for c in CATEGORIES if c!="전체"]
-                            with ec1: ect=st.selectbox("카테고리",cna,index=cna.index(task.get("category","기타")) if task.get("category","기타") in cna else 0, key=f"ec_{tab_category}_{task['id']}")
-                            with ec2: epr=st.selectbox("우선순위",list(PRIORITIES.keys()),index=list(PRIORITIES.keys()).index(task.get("priority","중간")) if task.get("priority","중간") in PRIORITIES else 1, key=f"ep_{tab_category}_{task['id']}", format_func=lambda x:f"{PRIORITIES[x]} {x}")
-                            with ec3:
-                                rk=list(RECURRENCE_OPTIONS.keys()); ri=0
-                                cr=task.get("recurrence")
-                                if cr:
-                                    for i,k in enumerate(rk):
-                                        if RECURRENCE_OPTIONS[k]==cr: ri=i; break
-                                erc=RECURRENCE_OPTIONS[st.selectbox("반복",rk,index=ri,key=f"er_{tab_category}_{task['id']}")]
-                            etg=st.text_input("🏷️ 태그",value=task.get("tags",""),key=f"etag_{tab_category}_{task['id']}")
-                            sc1,sc2=st.columns(2)
-                            with sc1:
-                                if st.button("💾 저장",key=f"save_{tab_category}_{task['id']}",use_container_width=True,type="primary"):
-                                    ddl=None
-                                    if edt: ddl=datetime.combine(edt,etm if etm else dt_time(18,0)).replace(tzinfo=KST)
-                                    update_task(task["id"],et,ed,ddl,ect,epr,erc,", ".join(parse_tags(etg)))
-                                    st.session_state[f"editing_{task['id']}"]=False; st.toast("✅ 수정 완료!"); st.rerun()
-                            with sc2:
-                                if st.button("취소",key=f"cancel_{tab_category}_{task['id']}",use_container_width=True): st.session_state[f"editing_{task['id']}"]=False; st.rerun()
+                        et = st.text_input("업무명", value=task["title"], key=f"et_{tab_category}_{task['id']}")
+                        ed = st.text_area("상세", value=task.get("description",""), height=150, key=f"ed_{tab_category}_{task['id']}")
+                        dl = parse_deadline_kst(task.get("deadline"))
+                        if dl: edt=st.date_input("마감일",value=dl.date(),key=f"edt_{tab_category}_{task['id']}"); etm=st.time_input("시간",value=dl.time(),key=f"etm_{tab_category}_{task['id']}")
+                        else: edt=st.date_input("마감일",value=None,key=f"edt_{tab_category}_{task['id']}"); etm=st.time_input("시간",value=None,key=f"etm_{tab_category}_{task['id']}")
+                        ec1,ec2,ec3 = st.columns(3)
+                        cna = [c for c in CATEGORIES if c!="전체"]
+                        with ec1: ect=st.selectbox("카테고리",cna,index=cna.index(task.get("category","기타")) if task.get("category","기타") in cna else 0, key=f"ec_{tab_category}_{task['id']}")
+                        with ec2: epr=st.selectbox("우선순위",list(PRIORITIES.keys()),index=list(PRIORITIES.keys()).index(task.get("priority","중간")) if task.get("priority","중간") in PRIORITIES else 1, key=f"ep_{tab_category}_{task['id']}", format_func=lambda x:f"{PRIORITIES[x]} {x}")
+                        with ec3:
+                            rk=list(RECURRENCE_OPTIONS.keys()); ri=0
+                            cr=task.get("recurrence")
+                            if cr:
+                                for i,k in enumerate(rk):
+                                    if RECURRENCE_OPTIONS[k]==cr: ri=i; break
+                            erc=RECURRENCE_OPTIONS[st.selectbox("반복",rk,index=ri,key=f"er_{tab_category}_{task['id']}")]
+                        etg=st.text_input("🏷️ 태그",value=task.get("tags",""),key=f"etag_{tab_category}_{task['id']}")
+                        sc1,sc2=st.columns(2)
+                        with sc1:
+                            if st.button("💾 저장",key=f"save_{tab_category}_{task['id']}",use_container_width=True,type="primary"):
+                                ddl=None
+                                if edt: ddl=datetime.combine(edt,etm if etm else dt_time(18,0)).replace(tzinfo=KST)
+                                update_task(task["id"],et,ed,ddl,ect,epr,erc,", ".join(parse_tags(etg)))
+                                st.session_state[f"editing_{task['id']}"]=False; st.toast("✅ 수정 완료!"); st.rerun()
+                        with sc2:
+                            if st.button("취소",key=f"cancel_{tab_category}_{task['id']}",use_container_width=True): st.session_state[f"editing_{task['id']}"]=False; st.rerun()
 
 
 # ============================================
