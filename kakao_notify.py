@@ -28,7 +28,7 @@ def supabase_get(table, params=""):
 
 
 def get_access_token():
-    """Refresh token으로 access token 재발급"""
+    """Refresh token으로 access token 재발급. 새 refresh token이 있으면 함께 반환."""
     data = urlencode({
         "grant_type": "refresh_token",
         "client_id": KAKAO_REST_API_KEY,
@@ -38,7 +38,8 @@ def get_access_token():
     req.add_header("Content-Type", "application/x-www-form-urlencoded")
     with urlopen(req) as resp:
         result = json.loads(resp.read().decode())
-    return result["access_token"]
+    new_refresh_token = result.get("refresh_token")  # 만료 1달 전에만 반환됨
+    return result["access_token"], new_refresh_token
 
 
 def send_kakao(message, access_token):
@@ -63,9 +64,16 @@ def main():
 
     tasks = supabase_get("tasks", "is_completed=eq.false&order=deadline.asc.nullslast")
 
+    access_token, new_refresh_token = get_access_token()
+
+    # 새 refresh token이 있으면 파일에 저장 (workflow에서 Secret 갱신)
+    if new_refresh_token:
+        with open("new_refresh_token.txt", "w") as f:
+            f.write(new_refresh_token)
+        print("[INFO] 새 refresh token 감지 — Secret 갱신 예정")
+
     if not tasks:
         message = f"☀️ {today_display} 좋은 아침!\n\n📋 오늘 등록된 업무가 없습니다.\n여유로운 하루 보내세요! 🎉"
-        access_token = get_access_token()
         send_kakao(message, access_token)
         return
 
@@ -114,7 +122,6 @@ def main():
     lines.append(f"전체 진행 중: {len(tasks)}건\n오늘도 화이팅! 💪")
 
     message = "\n".join(lines)
-    access_token = get_access_token()
     send_kakao(message, access_token)
     print(f"[OK] 카카오톡 알림 발송 완료: {now.isoformat()}")
 
