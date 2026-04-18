@@ -571,10 +571,13 @@ def calc_duration_minutes(start_str, end_str):
 
 def format_minutes(mins):
     if mins < 1: return "1분 미만"
-    h, m = int(mins // 60), int(mins % 60)
-    if h > 0 and m > 0: return f"{h}시간 {m}분"
-    elif h > 0: return f"{h}시간"
-    return f"{m}분"
+    total = int(mins)
+    d, h, m = total // 1440, (total % 1440) // 60, total % 60
+    parts = []
+    if d > 0: parts.append(f"{d}일")
+    if h > 0: parts.append(f"{h}시간")
+    if m > 0: parts.append(f"{m}분")
+    return " ".join(parts) if parts else "1분 미만"
 
 def calc_checklist_progress(description):
     if not description: return None
