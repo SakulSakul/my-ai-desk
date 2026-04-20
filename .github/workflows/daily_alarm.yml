@@ -5,9 +5,6 @@ on:
     - cron: '30 21 * * *'  # 매일 KST 06:30 (UTC 21:30)
   workflow_dispatch:
 
-permissions:
-  secrets: write
-
 jobs:
   notify:
     runs-on: ubuntu-latest
@@ -33,13 +30,6 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
           KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
           KAKAO_REFRESH_TOKEN: ${{ secrets.KAKAO_REFRESH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_PAT }}
+          GH_REPO: ${{ github.repository }}
         run: python kakao_notify.py
-
-      - name: Rotate KakaoTalk refresh token if renewed
-        if: hashFiles('new_refresh_token.txt') != ''
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          NEW_TOKEN=$(cat new_refresh_token.txt)
-          gh secret set KAKAO_REFRESH_TOKEN --body "$NEW_TOKEN" --repo ${{ github.repository }}
-          echo "[OK] KAKAO_REFRESH_TOKEN 자동 갱신 완료"

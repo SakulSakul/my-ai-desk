@@ -5,6 +5,7 @@ GitHub Actions에서 매일 아침 실행되어, 오늘 할 일을 카카오톡�
 
 import os
 import json
+import subprocess
 from datetime import datetime, timedelta, timezone
 from urllib.request import Request, urlopen
 from urllib.parse import urlencode
@@ -13,6 +14,8 @@ SUPABASE_URL = os.environ["SUPABASE_URL"]
 SUPABASE_KEY = os.environ["SUPABASE_KEY"]
 KAKAO_REST_API_KEY = os.environ["KAKAO_REST_API_KEY"]
 KAKAO_REFRESH_TOKEN = os.environ["KAKAO_REFRESH_TOKEN"]
+GH_TOKEN = os.environ.get("GH_TOKEN", "")
+GH_REPO = os.environ.get("GH_REPO", "")
 
 KST = timezone(timedelta(hours=9))
 
@@ -42,6 +45,22 @@ def get_access_token():
     return result["access_token"], new_refresh_token
 
 
+def rotate_refresh_token(new_token):
+    """GitHub Secret KAKAO_REFRESH_TOKEN 자동 갱신"""
+    if not GH_TOKEN or not GH_REPO:
+        print("[WARN] GH_TOKEN 또는 GH_REPO 없음 — 토큰 갱신 스킵")
+        return
+    result = subprocess.run(
+        ["gh", "secret", "set", "KAKAO_REFRESH_TOKEN", "--body", new_token, "--repo", GH_REPO],
+        env={**os.environ, "GH_TOKEN": GH_TOKEN},
+        capture_output=True, text=True
+    )
+    if result.returncode == 0:
+        print("[OK] KAKAO_REFRESH_TOKEN 자동 갱신 완료")
+    else:
+        print(f"[WARN] 토큰 갱신 실패: {result.stderr}")
+
+
 def send_kakao(message, access_token):
     """카카오톡 나에게 보내기"""
     template = json.dumps({
@@ -66,11 +85,9 @@ def main():
 
     access_token, new_refresh_token = get_access_token()
 
-    # 새 refresh token이 있으면 파일에 저장 (workflow에서 Secret 갱신)
     if new_refresh_token:
-        with open("new_refresh_token.txt", "w") as f:
-            f.write(new_refresh_token)
-        print("[INFO] 새 refresh token 감지 — Secret 갱신 예정")
+        print("[INFO] 새 refresh token 감지 — Secret 갱신 시도")
+        rotate_refresh_token(new_refresh_token)
 
     if not tasks:
         message = f"☀️ {today_display} 좋은 아침!\n\n📋 오늘 등록된 업무가 없습니다.\n여유로운 하루 보내세요! 🎉"
