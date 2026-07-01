@@ -73,6 +73,7 @@ jobs:
           SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}                            # anon (tasks 조회)
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}  # app_secrets 전용
           KAKAO_REST_API_KEY: ${{ secrets.KAKAO_REST_API_KEY }}
+          KAKAO_CLIENT_SECRET: ${{ secrets.KAKAO_CLIENT_SECRET }}
         run: python jobs/kakao_notify.py
 
       # ── 5) dead-man (B) '알림 전송': 위 알림 스텝이 모두 성공했을 때만 핑. ──

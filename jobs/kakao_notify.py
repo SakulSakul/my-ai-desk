@@ -18,6 +18,7 @@ refresh token 저장소: Supabase 테이블(app_secrets). 워크플로 안 Secre
   SUPABASE_KEY               anon 키 (tasks 조회)
   SUPABASE_SERVICE_ROLE_KEY  service_role 키 (app_secrets 읽기/쓰기 전용)
   KAKAO_REST_API_KEY
+  KAKAO_CLIENT_SECRET        (선택) client_secret 활성화 앱에서 필요
 """
 from __future__ import annotations
 
@@ -34,6 +35,7 @@ SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
 SUPABASE_KEY = os.environ["SUPABASE_KEY"]                       # anon
 SUPABASE_SERVICE_ROLE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
 KAKAO_REST_API_KEY = os.environ["KAKAO_REST_API_KEY"]
+KAKAO_CLIENT_SECRET = os.environ.get("KAKAO_CLIENT_SECRET")  # client_secret 활성화 시 필요(없으면 미포함)
 
 KST = timezone(timedelta(hours=9))
 SECRET_KEY_NAME = "kakao_refresh_token"
@@ -100,11 +102,14 @@ def write_secret(name: str, value: str, retries: int = 3) -> None:
 
 def get_access_token(refresh_token: str):
     """refresh token 으로 access token 재발급. 새 refresh token 은 만료 임박 시에만 반환됨."""
-    data = urlencode({
+    params = {
         "grant_type": "refresh_token",
         "client_id": KAKAO_REST_API_KEY,
         "refresh_token": refresh_token,
-    }).encode()
+    }
+    if KAKAO_CLIENT_SECRET:
+        params["client_secret"] = KAKAO_CLIENT_SECRET
+    data = urlencode(params).encode()
     req = Request("https://kauth.kakao.com/oauth/token", data=data)
     req.add_header("Content-Type", "application/x-www-form-urlencoded")
     with urlopen(req, timeout=15) as resp:
