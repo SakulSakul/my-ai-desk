@@ -31,19 +31,34 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
-SUPABASE_URL = os.environ["SUPABASE_URL"].rstrip("/")
-SUPABASE_KEY = os.environ["SUPABASE_KEY"]                       # anon
-SUPABASE_SERVICE_ROLE_KEY = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
-KAKAO_REST_API_KEY = os.environ["KAKAO_REST_API_KEY"]
-KAKAO_CLIENT_SECRET = os.environ.get("KAKAO_CLIENT_SECRET")  # client_secret 활성화 시 필요(없으면 미포함)
-
-KST = timezone(timedelta(hours=9))
-SECRET_KEY_NAME = "kakao_refresh_token"
-
-
 def _die(msg: str) -> None:
     print(f"[kakao] FAIL: {msg}", file=sys.stderr)
     sys.exit(1)
+
+
+def _env(name: str, required: bool = True) -> str | None:
+    """환경변수를 읽되 앞뒤 공백·개행을 제거한다.
+
+    GitHub Secrets 에 값을 붙여넣을 때 끝에 개행(\\n)이 섞이는 일이 흔한데,
+    그대로 카카오/Supabase 요청에 실으면 토큰 요청이 KOE001(400/406)로 거부된다.
+    빈 문자열은 미설정(None)으로 취급한다(예: 비활성화된 client_secret).
+    """
+    raw = os.environ.get(name)
+    if raw is None or raw.strip() == "":
+        if required:
+            _die(f"환경변수 '{name}' 미설정 — GitHub Secrets 확인 필요")
+        return None
+    return raw.strip()
+
+
+SUPABASE_URL = _env("SUPABASE_URL").rstrip("/")
+SUPABASE_KEY = _env("SUPABASE_KEY")                       # anon
+SUPABASE_SERVICE_ROLE_KEY = _env("SUPABASE_SERVICE_ROLE_KEY")
+KAKAO_REST_API_KEY = _env("KAKAO_REST_API_KEY")
+KAKAO_CLIENT_SECRET = _env("KAKAO_CLIENT_SECRET", required=False)  # client_secret 활성화 시 필요(없으면 미포함)
+
+KST = timezone(timedelta(hours=9))
+SECRET_KEY_NAME = "kakao_refresh_token"
 
 
 def supabase_get(table: str, params: str = "", key: str | None = None):
@@ -61,7 +76,8 @@ def read_secret(name: str) -> str:
                         key=SUPABASE_SERVICE_ROLE_KEY)
     if not rows:
         _die(f"app_secrets 에 '{name}' 없음 — app_secrets.sql 로 시드 먼저 할 것")
-    return rows[0]["value"]
+    # 콘솔에서 토큰을 붙여넣을 때 끝에 개행·공백이 섞이면 KOE001 로 거부되므로 제거.
+    return (rows[0]["value"] or "").strip()
 
 
 def write_secret(name: str, value: str, retries: int = 3) -> None:
@@ -189,9 +205,16 @@ def main() -> None:
     try:
         access_token, new_refresh = get_access_token(refresh_token)
     except HTTPError as e:
-        detail = e.read().decode(errors="replace")[:200]
-        _die(f"토큰 갱신 실패 HTTP {e.code}: {detail} "
-             f"(refresh token 만료면 재발급 후 app_secrets 갱신 필요)")
+        detail = e.read().decode(errors="replace")[:300]
+        hint = ""
+        # KOE001 = 요청 파라미터/값 오류. refresh 갱신에서 뜨면 보통 아래 셋 중 하나.
+        if "KOE001" in detail or e.code in (400, 406):
+            hint = (" — 점검: (1) app_secrets 의 kakao_refresh_token 이 만료/무효인지"
+                    " (refresh token 유효기간 ~2개월, 미사용 시 만료 → 재발급 필요),"
+                    " (2) KAKAO_REST_API_KEY 가 그 토큰을 발급한 앱과 동일한지,"
+                    " (3) 앱에 client_secret 이 '사용'이면 KAKAO_CLIENT_SECRET 값이 일치하는지"
+                    " ('미사용'이면 반대로 KAKAO_CLIENT_SECRET Secret 을 비워야 함).")
+        _die(f"토큰 갱신 실패 HTTP {e.code}: {detail}{hint}")
     except URLError as e:
         _die(f"토큰 갱신 네트워크 실패: {e.reason}")
 
