@@ -1,0 +1,501 @@
+{
+  "frozen_now": "2025-03-12T10:00:00+09:00",
+  "get_urgency": [
+    {
+      "input": null,
+      "output": [
+        "upcoming",
+        ""
+      ]
+    },
+    {
+      "input": "",
+      "output": [
+        "upcoming",
+        ""
+      ]
+    },
+    {
+      "input": "not-a-date",
+      "output": [
+        "upcoming",
+        ""
+      ]
+    },
+    {
+      "input": "2025-03-12T08:00:00+09:00",
+      "output": [
+        "overdue",
+        "⏰ 2시간 초과"
+      ]
+    },
+    {
+      "input": "2025-03-09T10:00:00+09:00",
+      "output": [
+        "overdue",
+        "⏰ 3일 초과"
+      ]
+    },
+    {
+      "input": "2025-03-12T15:00:00+09:00",
+      "output": [
+        "today",
+        "⚡ 5시간 남음"
+      ]
+    },
+    {
+      "input": "2025-03-12T10:30:00+09:00",
+      "output": [
+        "today",
+        "⚡ 30분 남음"
+      ]
+    },
+    {
+      "input": "2025-03-12T01:00:00Z",
+      "output": [
+        "today",
+        "⚡ 0분 남음"
+      ]
+    },
+    {
+      "input": "2025-03-13T10:00:00+09:00",
+      "output": [
+        "upcoming",
+        "📅 내일 마감"
+      ]
+    },
+    {
+      "input": "2025-03-15T10:00:00+09:00",
+      "output": [
+        "upcoming",
+        "📅 3일 남음"
+      ]
+    },
+    {
+      "input": "2025-03-22T10:00:00+09:00",
+      "output": [
+        "upcoming",
+        "📅 10일 남음"
+      ]
+    }
+  ],
+  "calc_checklist_progress": [
+    {
+      "input": null,
+      "output": null
+    },
+    {
+      "input": "",
+      "output": null
+    },
+    {
+      "input": "메모만 있음",
+      "output": null
+    },
+    {
+      "input": "- [ ] a\n- [x] b\n- [X] c",
+      "output": [
+        2,
+        3
+      ]
+    },
+    {
+      "input": "서문\n- [ ] one\n  - [ ] 들여쓴 항목\n- [x] two",
+      "output": [
+        1,
+        3
+      ]
+    }
+  ],
+  "parse_tags": [
+    {
+      "input": null,
+      "output": []
+    },
+    {
+      "input": "",
+      "output": []
+    },
+    {
+      "input": "#급함 #보고용",
+      "output": [
+        "급함",
+        "보고용"
+      ]
+    },
+    {
+      "input": "a, b,,c",
+      "output": [
+        "a",
+        "b",
+        "c"
+      ]
+    },
+    {
+      "input": "#a,b  c",
+      "output": [
+        "a",
+        "b",
+        "c"
+      ]
+    }
+  ],
+  "get_next_recurrence_date": [
+    {
+      "input": [
+        "2025-01-31T18:00:00+09:00",
+        "monthly"
+      ],
+      "output": "2025-02-28T18:00:00+09:00"
+    },
+    {
+      "input": [
+        "2025-12-15T09:00:00+09:00",
+        "monthly"
+      ],
+      "output": "2026-01-15T09:00:00+09:00"
+    },
+    {
+      "input": [
+        "2025-03-12T18:00:00+09:00",
+        "daily"
+      ],
+      "output": "2025-03-13T18:00:00+09:00"
+    },
+    {
+      "input": [
+        "2025-03-12T18:00:00+09:00",
+        "weekly"
+      ],
+      "output": "2025-03-19T18:00:00+09:00"
+    },
+    {
+      "input": [
+        "2025-03-12T18:00:00+09:00",
+        "biweekly"
+      ],
+      "output": "2025-03-26T18:00:00+09:00"
+    },
+    {
+      "input": [
+        "2025-03-12T18:00:00+09:00",
+        "unknown"
+      ],
+      "output": "2025-03-12T18:00:00+09:00"
+    }
+  ],
+  "format_minutes": [
+    {
+      "input": 0.2,
+      "output": "1분 미만"
+    },
+    {
+      "input": 1,
+      "output": "1분"
+    },
+    {
+      "input": 59.9,
+      "output": "59분"
+    },
+    {
+      "input": 75,
+      "output": "1시간 15분"
+    },
+    {
+      "input": 1500,
+      "output": "1일 1시간"
+    },
+    {
+      "input": 2880,
+      "output": "2일"
+    }
+  ],
+  "calc_duration": [
+    {
+      "input": [
+        null,
+        null
+      ],
+      "output": ""
+    },
+    {
+      "input": [
+        "2025-03-11T07:55:00+09:00",
+        "2025-03-12T10:00:00+09:00"
+      ],
+      "output": "1일 2시간 5분"
+    },
+    {
+      "input": [
+        "2025-03-12T10:00:00+09:00",
+        "2025-03-12T10:00:00+09:00"
+      ],
+      "output": "1분 미만"
+    },
+    {
+      "input": [
+        "bad",
+        "2025-03-12T10:00:00+09:00"
+      ],
+      "output": ""
+    }
+  ],
+  "calc_duration_minutes": [
+    {
+      "input": [
+        null,
+        null
+      ],
+      "output": 0.0
+    },
+    {
+      "input": [
+        "2025-03-11T07:55:00+09:00",
+        "2025-03-12T10:00:00+09:00"
+      ],
+      "output": 1565.0
+    },
+    {
+      "input": [
+        "2025-03-12T10:00:00+09:00",
+        "2025-03-12T10:00:00+09:00"
+      ],
+      "output": 0.0
+    },
+    {
+      "input": [
+        "bad",
+        "2025-03-12T10:00:00+09:00"
+      ],
+      "output": 0.0
+    }
+  ],
+  "build_task_date_map": {
+    "input": [
+      {
+        "id": 1,
+        "title": "기한초과",
+        "deadline": "2025-03-11T10:00:00+09:00",
+        "is_completed": false,
+        "category": "공정거래",
+        "priority": "높음",
+        "completed_at": null,
+        "timer_started_at": null,
+        "timer_ended_at": null
+      },
+      {
+        "id": 2,
+        "title": "오늘",
+        "deadline": "2025-03-12T14:00:00+09:00",
+        "is_completed": false,
+        "category": "동반성장",
+        "priority": "중간",
+        "completed_at": null,
+        "timer_started_at": null,
+        "timer_ended_at": null
+      },
+      {
+        "id": 3,
+        "title": "사흘내",
+        "deadline": "2025-03-14T10:00:00+09:00",
+        "is_completed": false,
+        "category": "환경",
+        "priority": "낮음",
+        "completed_at": null,
+        "timer_started_at": null,
+        "timer_ended_at": null
+      },
+      {
+        "id": 4,
+        "title": "무기한",
+        "deadline": null,
+        "is_completed": false,
+        "category": "기타",
+        "priority": "중간",
+        "completed_at": null,
+        "timer_started_at": null,
+        "timer_ended_at": null
+      },
+      {
+        "id": 5,
+        "title": "완료-이번주",
+        "deadline": "2025-03-11T10:00:00+09:00",
+        "is_completed": true,
+        "category": "사회공헌",
+        "priority": "중간",
+        "completed_at": "2025-03-11T07:00:00+09:00",
+        "timer_started_at": "2025-03-11T05:00:00+09:00",
+        "timer_ended_at": "2025-03-11T07:00:00+09:00"
+      },
+      {
+        "id": 6,
+        "title": "완료-지난달",
+        "deadline": null,
+        "is_completed": true,
+        "category": "공정거래",
+        "priority": "높음",
+        "completed_at": "2025-01-31T10:00:00+09:00",
+        "timer_started_at": null,
+        "timer_ended_at": null
+      }
+    ],
+    "output": {
+      "2025-03-11": [
+        1,
+        5
+      ],
+      "2025-03-12": [
+        2
+      ],
+      "2025-03-14": [
+        3
+      ]
+    }
+  },
+  "build_weekly_report": {
+    "input": {
+      "completed": [
+        {
+          "id": 5,
+          "title": "완료-이번주",
+          "deadline": "2025-03-11T10:00:00+09:00",
+          "is_completed": true,
+          "category": "사회공헌",
+          "priority": "중간",
+          "completed_at": "2025-03-11T07:00:00+09:00",
+          "timer_started_at": "2025-03-11T05:00:00+09:00",
+          "timer_ended_at": "2025-03-11T07:00:00+09:00"
+        },
+        {
+          "id": 6,
+          "title": "완료-지난달",
+          "deadline": null,
+          "is_completed": true,
+          "category": "공정거래",
+          "priority": "높음",
+          "completed_at": "2025-01-31T10:00:00+09:00",
+          "timer_started_at": null,
+          "timer_ended_at": null
+        }
+      ]
+    },
+    "output": {
+      "period": "03/10~03/16",
+      "total_completed": 1,
+      "total_minutes": 120.0,
+      "cat_counts": {
+        "사회공헌": 1
+      },
+      "daily_counts": {
+        "03/11": 1
+      }
+    }
+  },
+  "build_monthly_report": {
+    "input": {
+      "completed": [
+        {
+          "id": 5,
+          "title": "완료-이번주",
+          "deadline": "2025-03-11T10:00:00+09:00",
+          "is_completed": true,
+          "category": "사회공헌",
+          "priority": "중간",
+          "completed_at": "2025-03-11T07:00:00+09:00",
+          "timer_started_at": "2025-03-11T05:00:00+09:00",
+          "timer_ended_at": "2025-03-11T07:00:00+09:00"
+        },
+        {
+          "id": 6,
+          "title": "완료-지난달",
+          "deadline": null,
+          "is_completed": true,
+          "category": "공정거래",
+          "priority": "높음",
+          "completed_at": "2025-01-31T10:00:00+09:00",
+          "timer_started_at": null,
+          "timer_ended_at": null
+        }
+      ]
+    },
+    "output": {
+      "period": "2025년 3월",
+      "total_completed": 1,
+      "total_minutes": 120.0,
+      "cat_counts": {
+        "사회공헌": 1
+      },
+      "weekly_counts": {
+        "2주차": 1
+      }
+    }
+  },
+  "sample_tasks": [
+    {
+      "id": 1,
+      "title": "기한초과",
+      "deadline": "2025-03-11T10:00:00+09:00",
+      "is_completed": false,
+      "category": "공정거래",
+      "priority": "높음",
+      "completed_at": null,
+      "timer_started_at": null,
+      "timer_ended_at": null
+    },
+    {
+      "id": 2,
+      "title": "오늘",
+      "deadline": "2025-03-12T14:00:00+09:00",
+      "is_completed": false,
+      "category": "동반성장",
+      "priority": "중간",
+      "completed_at": null,
+      "timer_started_at": null,
+      "timer_ended_at": null
+    },
+    {
+      "id": 3,
+      "title": "사흘내",
+      "deadline": "2025-03-14T10:00:00+09:00",
+      "is_completed": false,
+      "category": "환경",
+      "priority": "낮음",
+      "completed_at": null,
+      "timer_started_at": null,
+      "timer_ended_at": null
+    },
+    {
+      "id": 4,
+      "title": "무기한",
+      "deadline": null,
+      "is_completed": false,
+      "category": "기타",
+      "priority": "중간",
+      "completed_at": null,
+      "timer_started_at": null,
+      "timer_ended_at": null
+    },
+    {
+      "id": 5,
+      "title": "완료-이번주",
+      "deadline": "2025-03-11T10:00:00+09:00",
+      "is_completed": true,
+      "category": "사회공헌",
+      "priority": "중간",
+      "completed_at": "2025-03-11T07:00:00+09:00",
+      "timer_started_at": "2025-03-11T05:00:00+09:00",
+      "timer_ended_at": "2025-03-11T07:00:00+09:00"
+    },
+    {
+      "id": 6,
+      "title": "완료-지난달",
+      "deadline": null,
+      "is_completed": true,
+      "category": "공정거래",
+      "priority": "높음",
+      "completed_at": "2025-01-31T10:00:00+09:00",
+      "timer_started_at": null,
+      "timer_ended_at": null
+    }
+  ]
+}
