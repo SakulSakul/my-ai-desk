@@ -1,0 +1,232 @@
+[
+  {
+    "name": "check_password",
+    "signature": "()",
+    "file": "app.py"
+  },
+  {
+    "name": "init_session_state",
+    "signature": "()",
+    "file": "app.py"
+  },
+  {
+    "name": "add_memo",
+    "signature": "(content, pinned=…)",
+    "file": "core/db.py"
+  },
+  {
+    "name": "add_task",
+    "signature": "(title, description, deadline, category, priority=…, recurrence=…, tags=…)",
+    "file": "core/db.py"
+  },
+  {
+    "name": "complete_task",
+    "signature": "(task)",
+    "file": "core/db.py"
+  },
+  {
+    "name": "delete_memo",
+    "signature": "(memo_id)",
+    "file": "core/db.py"
+  },
+  {
+    "name": "delete_task",
+    "signature": "(task_id)",
+    "file": "core/db.py"
+  },
+  {
+    "name": "init_supabase",
+    "signature": "()",
+    "file": "core/db.py"
+  },
+  {
+    "name": "load_all_tags",
+    "signature": "()",
+    "file": "core/db.py"
+  },
+  {
+    "name": "load_all_tasks",
+    "signature": "()",
+    "file": "core/db.py"
+  },
+  {
+    "name": "load_completed_tasks",
+    "signature": "(limit=…)",
+    "file": "core/db.py"
+  },
+  {
+    "name": "load_completed_today_count",
+    "signature": "()",
+    "file": "core/db.py"
+  },
+  {
+    "name": "load_memos",
+    "signature": "()",
+    "file": "core/db.py"
+  },
+  {
+    "name": "load_tasks",
+    "signature": "(show_completed=…, search_query=…, category=…, priority=…, tag_filter=…)",
+    "file": "core/db.py"
+  },
+  {
+    "name": "reset_timer",
+    "signature": "(task_id)",
+    "file": "core/db.py"
+  },
+  {
+    "name": "safe_db_call",
+    "signature": "(func)",
+    "file": "core/db.py"
+  },
+  {
+    "name": "start_timer",
+    "signature": "(task_id)",
+    "file": "core/db.py"
+  },
+  {
+    "name": "stop_timer",
+    "signature": "(task_id)",
+    "file": "core/db.py"
+  },
+  {
+    "name": "toggle_pin_memo",
+    "signature": "(memo_id, pinned)",
+    "file": "core/db.py"
+  },
+  {
+    "name": "uncomplete_task",
+    "signature": "(task_id)",
+    "file": "core/db.py"
+  },
+  {
+    "name": "update_task",
+    "signature": "(task_id, title, description, deadline, category, priority=…, recurrence=…, tags=…)",
+    "file": "core/db.py"
+  },
+  {
+    "name": "build_monthly_report",
+    "signature": "(completed, all_tasks)",
+    "file": "core/models.py"
+  },
+  {
+    "name": "build_task_date_map",
+    "signature": "(tasks)",
+    "file": "core/models.py"
+  },
+  {
+    "name": "build_weekly_report",
+    "signature": "(completed, all_tasks)",
+    "file": "core/models.py"
+  },
+  {
+    "name": "calc_checklist_progress",
+    "signature": "(description)",
+    "file": "core/models.py"
+  },
+  {
+    "name": "calc_duration",
+    "signature": "(created_str, completed_str)",
+    "file": "core/models.py"
+  },
+  {
+    "name": "calc_duration_minutes",
+    "signature": "(start_str, end_str)",
+    "file": "core/models.py"
+  },
+  {
+    "name": "format_dt",
+    "signature": "(dt_str)",
+    "file": "core/models.py"
+  },
+  {
+    "name": "format_minutes",
+    "signature": "(mins)",
+    "file": "core/models.py"
+  },
+  {
+    "name": "get_next_recurrence_date",
+    "signature": "(current_deadline, recurrence)",
+    "file": "core/models.py"
+  },
+  {
+    "name": "get_urgency",
+    "signature": "(deadline_str)",
+    "file": "core/models.py"
+  },
+  {
+    "name": "now_kst",
+    "signature": "()",
+    "file": "core/models.py"
+  },
+  {
+    "name": "parse_deadline_kst",
+    "signature": "(dt_str)",
+    "file": "core/models.py"
+  },
+  {
+    "name": "parse_tags",
+    "signature": "(tags_str)",
+    "file": "core/models.py"
+  },
+  {
+    "name": "render_analytics",
+    "signature": "(all_active, all_completed)",
+    "file": "ui/analytics.py"
+  },
+  {
+    "name": "render_calendar",
+    "signature": "()",
+    "file": "ui/calendar_view.py"
+  },
+  {
+    "name": "inject_css",
+    "signature": "()",
+    "file": "ui/components.py"
+  },
+  {
+    "name": "render_category_chart",
+    "signature": "(active, completed)",
+    "file": "ui/components.py"
+  },
+  {
+    "name": "render_monthly_calendar",
+    "signature": "(year, month, task_date_map, today_str, selected_date=…)",
+    "file": "ui/components.py"
+  },
+  {
+    "name": "render_time_chart",
+    "signature": "(all_tasks)",
+    "file": "ui/components.py"
+  },
+  {
+    "name": "render_weekly_view",
+    "signature": "(task_date_map)",
+    "file": "ui/components.py"
+  },
+  {
+    "name": "render_dashboard",
+    "signature": "(all_active, all_completed, completed_today, overdue_count, today_count, total_active)",
+    "file": "ui/dashboard.py"
+  },
+  {
+    "name": "render_sidebar",
+    "signature": "()",
+    "file": "ui/sidebar.py"
+  },
+  {
+    "name": "render_completed_tasks",
+    "signature": "()",
+    "file": "ui/tasks.py"
+  },
+  {
+    "name": "render_task_form",
+    "signature": "()",
+    "file": "ui/tasks.py"
+  },
+  {
+    "name": "render_task_list",
+    "signature": "(search_query)",
+    "file": "ui/tasks.py"
+  }
+]
