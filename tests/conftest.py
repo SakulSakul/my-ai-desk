@@ -139,12 +139,14 @@ import supabase as _supabase_pkg  # noqa: E402
 
 _supabase_pkg.create_client = lambda *_a, **_k: FAKE
 
-# 이후 core/db.py 가 이미 import 된 상태로 재사용될 때를 대비한 방어 패치
+# 이후 core/db.py 가 이미 import 된 상태로 재사용될 때를 대비한 방어 패치.
+# (모듈 부재 ImportError 외에, 시크릿 미설정 시 st.secrets 접근 예외도 무시 —
+#  core.db 의 최초 import 는 AppTest 실행 중(시크릿 주입 후)에 일어나는 게 정상 경로다.)
 try:  # pragma: no cover
     import core.db as _core_db
 
     _core_db.create_client = lambda *_a, **_k: FAKE
-except ImportError:
+except Exception:
     pass
 
 
