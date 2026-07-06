@@ -167,3 +167,28 @@ def build_monthly_report(completed, all_tasks):
         ca = parse_deadline_kst(t.get("completed_at"))
         if ca: wc[f"{(ca.day-1)//7+1}주차"] += 1
     return {"period":f"{y}년 {m}월","total_completed":len(mc),"total_minutes":tm,"cat_counts":dict(cc),"weekly_counts":dict(wc)}
+
+
+def split_today_sections(tasks, now=None):
+    """오늘 뷰 섹션 분류 — 아침 브리핑(jobs)과 동일 규칙, KST 기준 [Phase 2 신규].
+
+    반환: {"overdue": [...], "today": [...], "soon": [...](3일 이내), "rest": [...](무기한·그 외)}
+    기존 함수는 건드리지 않는 신규 순수 함수. now 미지정 시 현재 KST.
+    """
+    now = now or now_kst()
+    today_str = now.strftime("%Y-%m-%d")
+    sections = {"overdue": [], "today": [], "soon": [], "rest": []}
+    for t in tasks:
+        deadline = parse_deadline_kst(t.get("deadline"))
+        if not deadline:
+            sections["rest"].append(t)
+            continue
+        if deadline < now:
+            sections["overdue"].append(t)
+        elif deadline.strftime("%Y-%m-%d") == today_str:
+            sections["today"].append(t)
+        elif (deadline - now).days <= 3:
+            sections["soon"].append(t)
+        else:
+            sections["rest"].append(t)
+    return sections
