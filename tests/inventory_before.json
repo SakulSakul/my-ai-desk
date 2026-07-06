@@ -1,0 +1,192 @@
+[
+  {
+    "name": "add_memo",
+    "signature": "(content, pinned=…)",
+    "file": "app.py"
+  },
+  {
+    "name": "add_task",
+    "signature": "(title, description, deadline, category, priority=…, recurrence=…, tags=…)",
+    "file": "app.py"
+  },
+  {
+    "name": "build_monthly_report",
+    "signature": "(completed, all_tasks)",
+    "file": "app.py"
+  },
+  {
+    "name": "build_task_date_map",
+    "signature": "(tasks)",
+    "file": "app.py"
+  },
+  {
+    "name": "build_weekly_report",
+    "signature": "(completed, all_tasks)",
+    "file": "app.py"
+  },
+  {
+    "name": "calc_checklist_progress",
+    "signature": "(description)",
+    "file": "app.py"
+  },
+  {
+    "name": "calc_duration",
+    "signature": "(created_str, completed_str)",
+    "file": "app.py"
+  },
+  {
+    "name": "calc_duration_minutes",
+    "signature": "(start_str, end_str)",
+    "file": "app.py"
+  },
+  {
+    "name": "check_password",
+    "signature": "()",
+    "file": "app.py"
+  },
+  {
+    "name": "complete_task",
+    "signature": "(task)",
+    "file": "app.py"
+  },
+  {
+    "name": "delete_memo",
+    "signature": "(memo_id)",
+    "file": "app.py"
+  },
+  {
+    "name": "delete_task",
+    "signature": "(task_id)",
+    "file": "app.py"
+  },
+  {
+    "name": "format_dt",
+    "signature": "(dt_str)",
+    "file": "app.py"
+  },
+  {
+    "name": "format_minutes",
+    "signature": "(mins)",
+    "file": "app.py"
+  },
+  {
+    "name": "get_next_recurrence_date",
+    "signature": "(current_deadline, recurrence)",
+    "file": "app.py"
+  },
+  {
+    "name": "get_urgency",
+    "signature": "(deadline_str)",
+    "file": "app.py"
+  },
+  {
+    "name": "init_session_state",
+    "signature": "()",
+    "file": "app.py"
+  },
+  {
+    "name": "init_supabase",
+    "signature": "()",
+    "file": "app.py"
+  },
+  {
+    "name": "load_all_tags",
+    "signature": "()",
+    "file": "app.py"
+  },
+  {
+    "name": "load_all_tasks",
+    "signature": "()",
+    "file": "app.py"
+  },
+  {
+    "name": "load_completed_tasks",
+    "signature": "(limit=…)",
+    "file": "app.py"
+  },
+  {
+    "name": "load_completed_today_count",
+    "signature": "()",
+    "file": "app.py"
+  },
+  {
+    "name": "load_memos",
+    "signature": "()",
+    "file": "app.py"
+  },
+  {
+    "name": "load_tasks",
+    "signature": "(show_completed=…, search_query=…, category=…, priority=…, tag_filter=…)",
+    "file": "app.py"
+  },
+  {
+    "name": "now_kst",
+    "signature": "()",
+    "file": "app.py"
+  },
+  {
+    "name": "parse_deadline_kst",
+    "signature": "(dt_str)",
+    "file": "app.py"
+  },
+  {
+    "name": "parse_tags",
+    "signature": "(tags_str)",
+    "file": "app.py"
+  },
+  {
+    "name": "render_category_chart",
+    "signature": "(active, completed)",
+    "file": "app.py"
+  },
+  {
+    "name": "render_monthly_calendar",
+    "signature": "(year, month, task_date_map, today_str, selected_date=…)",
+    "file": "app.py"
+  },
+  {
+    "name": "render_time_chart",
+    "signature": "(all_tasks)",
+    "file": "app.py"
+  },
+  {
+    "name": "render_weekly_view",
+    "signature": "(task_date_map)",
+    "file": "app.py"
+  },
+  {
+    "name": "reset_timer",
+    "signature": "(task_id)",
+    "file": "app.py"
+  },
+  {
+    "name": "safe_db_call",
+    "signature": "(func)",
+    "file": "app.py"
+  },
+  {
+    "name": "start_timer",
+    "signature": "(task_id)",
+    "file": "app.py"
+  },
+  {
+    "name": "stop_timer",
+    "signature": "(task_id)",
+    "file": "app.py"
+  },
+  {
+    "name": "toggle_pin_memo",
+    "signature": "(memo_id, pinned)",
+    "file": "app.py"
+  },
+  {
+    "name": "uncomplete_task",
+    "signature": "(task_id)",
+    "file": "app.py"
+  },
+  {
+    "name": "update_task",
+    "signature": "(task_id, title, description, deadline, category, priority=…, recurrence=…, tags=…)",
+    "file": "app.py"
+  }
+]
