@@ -45,7 +45,7 @@ def render_analytics(all_active, all_completed):
         with rt1:
             wr = build_weekly_report(all_completed, all_active)
             st.markdown(f'<div class="section-header">{wr["period"]}</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="report-grid"><div class="report-box"><div class="report-number" style="color:var(--green);">{wr["total_completed"]}</div><div class="report-label">완료</div></div><div class="report-box"><div class="report-number" style="color:var(--gold);">{format_minutes(wr["total_minutes"])}</div><div class="report-label">투자 시간</div></div><div class="report-box"><div class="report-number" style="color:var(--orange);">{format_minutes(wr["total_minutes"]/max(wr["total_completed"],1))}</div><div class="report-label">건당 평균</div></div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="report-grid"><div class="report-box"><div class="report-number" style="color:var(--green);">{wr["total_completed"]}</div><div class="report-label">완료</div></div><div class="report-box"><div class="report-number" style="color:var(--accent);">{format_minutes(wr["total_minutes"])}</div><div class="report-label">투자 시간</div></div><div class="report-box"><div class="report-number" style="color:var(--orange);">{format_minutes(wr["total_minutes"]/max(wr["total_completed"],1))}</div><div class="report-label">건당 평균</div></div></div>', unsafe_allow_html=True)
             if wr['cat_counts']:
                 for cat,cnt in sorted(wr['cat_counts'].items(), key=lambda x:x[1], reverse=True):
                     st.markdown(f"{CATEGORY_ICONS.get(cat,'')} **{cat}**: {cnt}건")
@@ -58,7 +58,7 @@ def render_analytics(all_active, all_completed):
         with rt2:
             mr = build_monthly_report(all_completed, all_active)
             st.markdown(f'<div class="section-header">{mr["period"]}</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="report-grid"><div class="report-box"><div class="report-number" style="color:var(--green);">{mr["total_completed"]}</div><div class="report-label">완료</div></div><div class="report-box"><div class="report-number" style="color:var(--gold);">{format_minutes(mr["total_minutes"])}</div><div class="report-label">투자 시간</div></div><div class="report-box"><div class="report-number" style="color:var(--gold-hover);">{format_minutes(mr["total_minutes"]/max(mr["total_completed"],1))}</div><div class="report-label">건당 평균</div></div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="report-grid"><div class="report-box"><div class="report-number" style="color:var(--green);">{mr["total_completed"]}</div><div class="report-label">완료</div></div><div class="report-box"><div class="report-number" style="color:var(--accent);">{format_minutes(mr["total_minutes"])}</div><div class="report-label">투자 시간</div></div><div class="report-box"><div class="report-number" style="color:var(--accent-dark);">{format_minutes(mr["total_minutes"]/max(mr["total_completed"],1))}</div><div class="report-label">건당 평균</div></div></div>', unsafe_allow_html=True)
             if mr['cat_counts']:
                 for cat,cnt in sorted(mr['cat_counts'].items(), key=lambda x:x[1], reverse=True):
                     st.markdown(f"{CATEGORY_ICONS.get(cat,'')} **{cat}**: {cnt}건")
