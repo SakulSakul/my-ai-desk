@@ -8,6 +8,7 @@
 카드 액션(완료/내일로)은 fragment 스코프 리런으로 전체 리런 없이 반영.
 """
 import streamlit as st
+from streamlit.errors import StreamlitAPIException
 from datetime import datetime, timedelta, time as dt_time
 
 from core.models import (
@@ -38,13 +39,25 @@ def _render_quick_add():
         deadline = datetime.combine(now_kst().date(), dt_time(23, 59), tzinfo=KST)
         add_task(title.strip(), "", deadline, "기타", "중간", None, "", source="quick")
         st.toast("✅ 추가!")
-        st.rerun(scope="fragment")
+        _refresh()
 
 _SECTIONS = [
     ("overdue", "🚨 기한 초과"),
     ("today", "📌 오늘 마감"),
     ("soon", "📅 3일 이내"),
 ]
+
+
+def _refresh():
+    """fragment 스코프 리런, fragment 리런 문맥이 아니면(전체 실행·AppTest) 전체 리런 폴백.
+
+    scope='fragment' 는 fragment 리런 중에만 허용된다. 성공 시 발생하는
+    RerunException 은 BaseException 직계라 아래 except 에 잡히지 않는다.
+    """
+    try:
+        st.rerun(scope="fragment")
+    except StreamlitAPIException:
+        st.rerun()
 
 
 def _tomorrow_deadline(task):
@@ -74,12 +87,12 @@ def _render_task_card(task):
         if st.button("완료 ✓", key=f"today_done_{task['id']}", use_container_width=True, type="primary"):
             complete_task(task)
             st.toast("🎉 수고하셨습니다!")
-            st.rerun(scope="fragment")
+            _refresh()
     with b2:
         if st.button("내일로 →", key=f"today_postpone_{task['id']}", use_container_width=True):
             postpone_task(task["id"], _tomorrow_deadline(task))
             st.toast("📅 내일로 미뤘습니다")
-            st.rerun(scope="fragment")
+            _refresh()
 
 
 def _render_stat_filter(all_active, all_completed):
@@ -87,20 +100,20 @@ def _render_stat_filter(all_active, all_completed):
     stc1, stc2, stc3, stc4, stc5 = st.columns(5)
     with stc1:
         if st.button("📋 진행 중", use_container_width=True, disabled=st.session_state.stat_filter=="active"):
-            st.session_state.stat_filter = "active" if st.session_state.stat_filter != "active" else None; st.rerun(scope="fragment")
+            st.session_state.stat_filter = "active" if st.session_state.stat_filter != "active" else None; _refresh()
     with stc2:
         if st.button("🚨 기한 초과", use_container_width=True, disabled=st.session_state.stat_filter=="overdue"):
-            st.session_state.stat_filter = "overdue" if st.session_state.stat_filter != "overdue" else None; st.rerun(scope="fragment")
+            st.session_state.stat_filter = "overdue" if st.session_state.stat_filter != "overdue" else None; _refresh()
     with stc3:
         if st.button("⚡ 오늘 마감", use_container_width=True, disabled=st.session_state.stat_filter=="today"):
-            st.session_state.stat_filter = "today" if st.session_state.stat_filter != "today" else None; st.rerun(scope="fragment")
+            st.session_state.stat_filter = "today" if st.session_state.stat_filter != "today" else None; _refresh()
     with stc4:
         if st.button("✅ 오늘 완료", use_container_width=True, disabled=st.session_state.stat_filter=="completed_today"):
-            st.session_state.stat_filter = "completed_today" if st.session_state.stat_filter != "completed_today" else None; st.rerun(scope="fragment")
+            st.session_state.stat_filter = "completed_today" if st.session_state.stat_filter != "completed_today" else None; _refresh()
     with stc5:
         if st.session_state.stat_filter:
             if st.button("✕ 필터 해제", use_container_width=True):
-                st.session_state.stat_filter = None; st.rerun(scope="fragment")
+                st.session_state.stat_filter = None; _refresh()
 
     if st.session_state.stat_filter:
         sf = st.session_state.stat_filter

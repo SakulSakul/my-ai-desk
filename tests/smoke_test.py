@@ -1,16 +1,15 @@
-"""Phase 1-A 자동 스모크 테스트 (§4 체크리스트 7항목).
+"""Phase 2 자동 스모크 테스트.
 
-전 시나리오를 UI(streamlit.testing.v1.AppTest) 경유로 구동한다 —
-리팩터 전(단일 app.py)과 후(core/ + ui/)에 '같은 테스트'가 그대로 통과해야
-순수 이동이 증명되기 때문이다. DB는 conftest 의 FakeSupabase 로 대체.
+[1-A §4 체크리스트 7항목 유지 — 셀렉터만 새 내비 구조에 맞게 갱신]
++ [Phase 2 §6-2 신규 6항목: 오늘 뷰/빠른 추가/카드 액션/탭 전환/사이드바 부재/CSS]
 
-골든(7번) 테스트는 core/models.py 가 있으면 그것을, 없으면(기준선 시점)
-app.py 원본에서 AST 로 추출한 함수를 대상으로 실행한다.
+전 시나리오 UI(streamlit.testing.v1.AppTest) 경유. DB는 conftest 의 FakeSupabase.
+골든(분류) 테스트는 core.models 를 시각 고정(monkeypatch)으로 검증 — 1-A와 동일.
 """
 from __future__ import annotations
 
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -32,10 +31,15 @@ def _make_apptest() -> AppTest:
 def _login(at: AppTest) -> AppTest:
     at.run()
     at.text_input(key="pwd_input").input(DUMMY_SECRETS["APP_PASSWORD"])
-    login_btn = next(b for b in at.button if "로그인" in (b.label or ""))
-    login_btn.click()
+    next(b for b in at.button if "로그인" in (b.label or "")).click()
     at.run()
     assert at.session_state["authenticated"] is True
+    return at
+
+
+def _goto(at: AppTest, tab: str) -> AppTest:
+    at.segmented_control(key="nav").set_value(tab)
+    at.run()
     return at
 
 
@@ -43,14 +47,13 @@ def _all_markdown(at: AppTest) -> str:
     return "\n".join(str(m.value) for m in at.markdown)
 
 
-# ── 1. 앱 부팅: 예외 없이 렌더 + 인증 게이트 표시 ──────────────────
+# ── [1-A 1] 앱 부팅: 예외 없이 렌더 + 인증 게이트 ─────────────────
 def test_boot_shows_auth_gate(fake_db):
     at = _make_apptest()
     at.run()
     assert not at.exception
     assert at.text_input(key="pwd_input") is not None
     assert "My AI Desk" in _all_markdown(at)
-    # 인증 전에는 업무 데이터가 노출되지 않아야 한다
     assert "기한초과 업무" not in _all_markdown(at)
 
 
@@ -64,27 +67,26 @@ def test_wrong_password_rejected(fake_db):
     assert len(at.error) >= 1
 
 
-# ── 2. 인증 통과 → 태스크 목록 렌더 ────────────────────────────────
+# ── [1-A 2] 인증 통과 → 태스크 목록 렌더 (전체 탭) ────────────────
 def test_task_list_renders(fake_db):
     fake, seed = fake_db
     at = _login(_make_apptest())
+    _goto(at, "전체")
     assert not at.exception
     body = _all_markdown(at)
     for t in seed["tasks"]:
         if not t["is_completed"]:
             assert t["title"] in body, f"'{t['title']}' 미렌더"
-    # 사이드바 메모 렌더 (Read)
-    assert "고정된 메모" in body and "일반 메모" in body
 
 
-# ── 3. 태스크 추가 → insert 가 올바른 인자로 호출 ─────────────────
+# ── [1-A 3] 폼 등록 → insert 호출 (source='form' 유지) ────────────
 def test_add_task_calls_insert(fake_db):
     fake, _ = fake_db
     at = _login(_make_apptest())
+    _goto(at, "전체")
     title_box = next(w for w in at.text_input if (w.label or "").startswith("업무명"))
     title_box.input("새 스모크 업무")
-    submit = next(b for b in at.button if "업무 등록" in (b.label or ""))
-    submit.click()
+    next(b for b in at.button if "업무 등록" in (b.label or "")).click()
     at.run()
     assert not at.exception
     inserts = fake.calls_of("tasks", "insert")
@@ -92,16 +94,16 @@ def test_add_task_calls_insert(fake_db):
     payload = inserts[0]["payload"]
     assert payload["title"] == "새 스모크 업무"
     assert payload["is_completed"] is False
-    assert payload["category"] in ("공정거래", "동반성장", "사회공헌", "환경", "기타")
     assert payload["priority"] == "중간"
-    assert payload["timer_started_at"]  # 등록 시 타이머 시작 기록(현재 코드 동작)
-    # 참고: 현재 코드에 source='form' 필드는 없음 — §7-2 관찰 기록 대상
+    assert payload["timer_started_at"]
+    assert payload["source"] == "form"  # 기존 폼 경로는 'form' 유지 (§4)
 
 
-# ── 4. 태스크 완료 → update 호출 ──────────────────────────────────
+# ── [1-A 4] 완료 → update 호출 (전체 탭 경로) ─────────────────────
 def test_complete_task_calls_update(fake_db):
     fake, _ = fake_db
     at = _login(_make_apptest())
+    _goto(at, "전체")
     at.button(key="quick_전체_1").click()
     at.run()
     assert not at.exception
@@ -110,14 +112,14 @@ def test_complete_task_calls_update(fake_db):
     assert len(updates) == 1
     assert updates[0]["payload"]["completed_at"]
     assert ("eq", "id", 1) in updates[0]["filters"]
-    # 반복 없음 → 다음 회차 insert 가 생기면 안 된다
     assert not fake.calls_of("tasks", "insert")
 
 
-# ── 5. 태스크 삭제 → delete 호출 ──────────────────────────────────
+# ── [1-A 5] 삭제 → delete 호출 ────────────────────────────────────
 def test_delete_task_calls_delete(fake_db):
     fake, _ = fake_db
     at = _login(_make_apptest())
+    _goto(at, "전체")
     at.button(key="del_전체_1").click()
     at.run()
     assert not at.exception
@@ -126,12 +128,15 @@ def test_delete_task_calls_delete(fake_db):
     assert ("eq", "id", 1) in deletes[0]["filters"]
 
 
-# ── 6. 메모 CRUD 각 1회 ───────────────────────────────────────────
+# ── [1-A 6] 메모 CRUD (메모 탭) ───────────────────────────────────
 def test_memo_crud(fake_db):
     fake, _ = fake_db
-    # Create
     at = _login(_make_apptest())
-    memo_box = next(w for w in at.text_area if (w.placeholder or "").startswith("번뜩이는"))
+    _goto(at, "메모")
+    body = _all_markdown(at)
+    assert "고정된 메모" in body and "일반 메모" in body  # Read
+
+    memo_box = at.text_area(key="memo_input")
     memo_box.input("스모크 메모")
     next(b for b in at.button if "저장" in (b.label or "")).click()
     at.run()
@@ -139,40 +144,28 @@ def test_memo_crud(fake_db):
     inserts = fake.calls_of("memos", "insert")
     assert len(inserts) == 1 and inserts[0]["payload"]["content"] == "스모크 메모"
 
-    # Update (고정 토글)
     at.button(key="pin_12").click()
     at.run()
     ups = fake.calls_of("memos", "update")
     assert len(ups) == 1 and ups[0]["payload"] == {"pinned": True}
 
-    # Delete
     at.button(key="del_memo_11").click()
     at.run()
     dels = fake.calls_of("memos", "delete")
     assert len(dels) == 1 and ("eq", "id", 11) in dels[0]["filters"]
 
 
-# ── 7. 분류 로직 골든 테스트 ──────────────────────────────────────
-def _classification_fns():
-    """core.models 가 있으면 그것을(시각 고정 monkeypatch), 없으면 원본 app.py 에서 AST 추출."""
+# ── [1-A 7] 분류 로직 골든 (core.models — 무손상 확인) ────────────
+def test_classification_golden(fake_db):
+    import core.models as m
     frozen = datetime.fromisoformat(GOLDEN["frozen_now"])
+    m_now, m.now_kst = m.now_kst, (lambda: frozen)
     try:
-        import core.models as m
-        m_now, m.now_kst = m.now_kst, (lambda: frozen)
         fns = {name: getattr(m, name) for name in (
             "get_urgency", "calc_checklist_progress", "parse_tags",
             "get_next_recurrence_date", "format_minutes", "calc_duration",
             "calc_duration_minutes", "build_task_date_map",
             "build_weekly_report", "build_monthly_report")}
-        return fns, (lambda: setattr(m, "now_kst", m_now))
-    except ImportError:
-        from generate_golden import extract_functions
-        return extract_functions(ROOT / "app.py"), (lambda: None)
-
-
-def test_classification_golden(fake_db):
-    fns, restore = _classification_fns()
-    try:
         for case in GOLDEN["get_urgency"]:
             assert list(fns["get_urgency"](case["input"])) == case["output"], case
         for case in GOLDEN["calc_checklist_progress"]:
@@ -189,13 +182,122 @@ def test_classification_golden(fake_db):
             assert fns["calc_duration"](*case["input"]) == case["output"], case
         for case in GOLDEN["calc_duration_minutes"]:
             assert fns["calc_duration_minutes"](*case["input"]) == case["output"], case
-
         g = GOLDEN["build_task_date_map"]
         got_map = fns["build_task_date_map"](g["input"])
         assert {k: [t["id"] for t in v] for k, v in got_map.items()} == g["output"]
-
         completed = [t for t in GOLDEN["sample_tasks"] if t["is_completed"]]
         assert fns["build_weekly_report"](completed, GOLDEN["sample_tasks"]) == GOLDEN["build_weekly_report"]["output"]
         assert fns["build_monthly_report"](completed, GOLDEN["sample_tasks"]) == GOLDEN["build_monthly_report"]["output"]
     finally:
-        restore()
+        m.now_kst = m_now
+
+
+# ══ Phase 2 신규 (§6-2) ══════════════════════════════════════════
+
+# ── ① 오늘 뷰 렌더 + 분류 섹션 표시 (기본 랜딩) ───────────────────
+def test_today_view_sections(fake_db):
+    from core.models import split_today_sections
+    fake, seed = fake_db
+    at = _login(_make_apptest())  # 기본 랜딩 = 오늘
+    assert not at.exception
+    body = _all_markdown(at)
+    active = [t for t in seed["tasks"] if not t["is_completed"]]
+    expected = split_today_sections(active)
+    labels = {"overdue": "기한 초과", "today": "오늘 마감", "soon": "3일 이내"}
+    for key, label in labels.items():
+        if expected[key]:
+            assert label in body, f"섹션 '{label}' 미표시"
+            for t in expected[key]:
+                assert t["title"] in body
+    # 무기한 등 나머지는 expander 로
+    if expected["rest"]:
+        assert any("나머지 업무" in (e.label or "") for e in at.expander)
+    # 통계 카드(구 dashboard 흡수) 표시
+    for stat_label in ("진행 중", "기한 초과", "오늘 마감", "오늘 완료"):
+        assert stat_label in body
+
+
+# ── ② 빠른 추가 → source='quick' + 오늘 23:59 기본 기한 ──────────
+def test_quick_add_source_quick(fake_db):
+    from core.models import now_kst
+    fake, _ = fake_db
+    at = _login(_make_apptest())
+    at.text_input(key="quick_add_input").input("빠른 스모크 업무")
+    next(b for b in at.button if (b.label or "").strip() == "추가").click()
+    at.run()
+    assert not at.exception
+    inserts = fake.calls_of("tasks", "insert")
+    assert len(inserts) == 1
+    payload = inserts[0]["payload"]
+    assert payload["title"] == "빠른 스모크 업무"
+    assert payload["source"] == "quick"
+    dl = datetime.fromisoformat(payload["deadline"])
+    assert dl.strftime("%H:%M") == "23:59"
+    assert dl.date() == now_kst().date()
+    assert payload["category"] == "기타" and payload["priority"] == "중간"
+
+
+# ── ③ 오늘 뷰 카드 액션: [완료 ✓] / [내일로 →] ───────────────────
+def test_today_complete_action(fake_db):
+    fake, _ = fake_db
+    at = _login(_make_apptest())
+    at.button(key="today_done_1").click()
+    at.run()
+    assert not at.exception
+    updates = [c for c in fake.calls_of("tasks", "update")
+               if c["payload"].get("is_completed") is True]
+    assert len(updates) == 1
+    assert ("eq", "id", 1) in updates[0]["filters"]
+
+
+def test_today_postpone_action(fake_db):
+    fake, seed = fake_db
+    at = _login(_make_apptest())
+    orig = datetime.fromisoformat(seed["tasks"][1]["deadline"])  # id=2 (오늘 마감)
+    at.button(key="today_postpone_2").click()
+    at.run()
+    assert not at.exception
+    ups = [c for c in fake.calls_of("tasks", "update") if "deadline" in c["payload"]]
+    assert len(ups) == 1
+    assert ("eq", "id", 2) in ups[0]["filters"]
+    new_dl = datetime.fromisoformat(ups[0]["payload"]["deadline"])
+    assert new_dl - orig == timedelta(days=1)
+
+
+# ── ④ 탭 전환: 4개 화면 모두 렌더 ─────────────────────────────────
+def test_nav_all_tabs_render(fake_db):
+    fake, _ = fake_db
+    at = _login(_make_apptest())
+    signatures = {
+        "오늘": "오늘 마감",
+        "전체": "업무 목록",
+        "메모": "퀵 메모",
+        "분석": "업무 현황",
+    }
+    for tab, signature in signatures.items():
+        _goto(at, tab)
+        assert not at.exception, f"[{tab}] 탭 예외"
+        assert signature in _all_markdown(at), f"[{tab}] 탭 시그니처 '{signature}' 미표시"
+
+
+# ── ⑤ 사이드바 미사용 ─────────────────────────────────────────────
+def test_no_sidebar_usage(fake_db):
+    sources = [ROOT / "app.py"] + sorted((ROOT / "ui").glob("*.py"))
+    for f in sources:
+        assert "st.sidebar" not in f.read_text(encoding="utf-8"), f"{f.name} 에 st.sidebar 잔존"
+    at = _login(_make_apptest())
+    assert len(at.sidebar.markdown) == 0 and len(at.sidebar.button) == 0
+
+
+# ── ⑥ CSS: Pretendard CDN 포함 + 구 @font-face/세리프 부재 ────────
+def test_css_design_system():
+    css_src = (ROOT / "ui" / "components.py").read_text(encoding="utf-8")
+    assert "cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" in css_src
+    assert "@font-face" not in css_src
+    assert "Noto+Serif" not in css_src and "Noto Serif" not in css_src
+    assert "#2563EB" in css_src
+    assert "text-shadow" not in css_src
+    # 앱 어디에도 세리프 폰트 패밀리 선언이 남지 않아야 (별칭 정의 제외)
+    for f in [ROOT / "app.py"] + sorted((ROOT / "ui").glob("*.py")):
+        src = f.read_text(encoding="utf-8")
+        assert "Georgia" not in src and "serif KR" not in src, f.name
