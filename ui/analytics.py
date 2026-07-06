@@ -1,4 +1,8 @@
-"""ui/analytics.py — 업무 현황·시간 분석 + 히스토리·리포트 [Phase 1-A, app.py 에서 순수 이동]."""
+"""ui/analytics.py — [분석] 탭: 업무 현황·시간 분석 + 히스토리·리포트 (+달력 흡수).
+
+[Phase 1-A 순수 이동 → Phase 2 개편] 달력은 모바일 폭 고려로 5번째 탭 대신
+분석 탭 하위로 흡수(§2 재량). 기존 expander 구조 그대로라 기능 손실 없음.
+"""
 import streamlit as st
 
 from core.models import (
@@ -6,8 +10,17 @@ from core.models import (
     format_dt, parse_deadline_kst, calc_duration, calc_duration_minutes,
     format_minutes, parse_tags, build_weekly_report, build_monthly_report,
 )
-from core.db import load_all_tasks
+from core.db import load_all_tasks, load_tasks, load_completed_tasks
 from ui.components import render_category_chart, render_time_chart
+from ui.calendar_view import render_calendar
+
+
+def render_analytics_tab():
+    """[분석] 탭 합성: 데이터 로드 → 현황/리포트 → 달력 [Phase 2]."""
+    all_active = load_tasks(show_completed=False, search_query="", category="전체", priority="전체") or []
+    all_completed = load_completed_tasks(100) or []
+    render_analytics(all_active, all_completed)
+    render_calendar()
 
 
 def render_analytics(all_active, all_completed):

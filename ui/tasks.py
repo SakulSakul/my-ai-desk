@@ -1,6 +1,7 @@
-"""ui/tasks.py — 업무 등록 폼 / 업무 목록(카테고리 탭) / 완료된 업무 [Phase 1-A, app.py 에서 순수 이동].
+"""ui/tasks.py — [전체] 탭: 검색·필터 / 업무 등록 폼 / 업무 목록(카테고리 탭) / 완료된 업무.
 
-사이드바가 기록한 session_state(filter_*/sort_by)를 소비한다. 검색어는 인자로 받는다.
+[Phase 1-A 순수 이동 → Phase 2 개편] 검색·필터는 구 사이드바에서 이 탭 상단으로 흡수.
+filter_*/sort_by session_state 키와 위젯 키(quick_*/del_* 등)는 기존 그대로 유지.
 """
 import streamlit as st
 from datetime import datetime, time as dt_time
@@ -14,7 +15,36 @@ from core.models import (
 from core.db import (
     load_tasks, add_task, complete_task, uncomplete_task, delete_task,
     update_task, start_timer, stop_timer, reset_timer, load_completed_tasks,
+    load_all_tags,
 )
+
+
+def render_filters() -> str:
+    """검색·필터·정렬 (구 사이드바 → [전체] 탭 상단 expander) [Phase 2]."""
+    with st.expander("🔍 검색 & 필터", expanded=False):
+        search_query = st.text_input("검색", placeholder="제목, 내용, 태그...", label_visibility="collapsed", key="search_input")
+        fc1, fc2 = st.columns(2)
+        with fc1: st.session_state.filter_category = st.selectbox("카테고리", CATEGORIES, index=CATEGORIES.index(st.session_state.filter_category))
+        with fc2:
+            po = ["전체"]+list(PRIORITIES.keys())
+            cp = st.session_state.filter_priority if st.session_state.filter_priority in po else "전체"
+            st.session_state.filter_priority = st.selectbox("우선순위", po, index=po.index(cp))
+
+        at = load_all_tags() or []
+        if at:
+            to = [""]+sorted(at)
+            st.session_state.filter_tag = st.selectbox("🏷️ 태그", to, format_func=lambda x: "전체" if x=="" else f"#{x}")
+        else: st.session_state.filter_tag = ""
+        st.session_state.sort_by = st.radio("정렬", ["마감일순","우선순위순","등록순"], index=["마감일순","우선순위순","등록순"].index(st.session_state.sort_by), horizontal=True)
+    return search_query
+
+
+def render_all_tab():
+    """[전체] 탭 합성: 필터 → 등록 폼 → 목록 → 완료 [Phase 2]."""
+    search_query = render_filters()
+    render_task_form()
+    render_task_list(search_query)
+    render_completed_tasks()
 
 
 def render_task_form():
