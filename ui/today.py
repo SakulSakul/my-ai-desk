@@ -16,8 +16,29 @@ from core.models import (
 )
 from core.db import (
     load_tasks, load_completed_tasks, load_completed_today_count,
-    complete_task, postpone_task,
+    complete_task, postpone_task, add_task,
 )
+
+
+def _render_quick_add():
+    """빠른 추가 (오늘 뷰 최상단 고정) — 한 줄 입력 + Enter/버튼 제출 [Phase 2 §4].
+
+    비-LLM 최소 파싱: 제목 그대로 저장. 기한은 '오늘 23:59(KST)' 기본 —
+    오늘 뷰에서 추가한 항목이 곧바로 '오늘 마감' 섹션에 보이도록(재량 결정, PR 기록).
+    카테고리/우선순위는 기존 폼 기본값 관례(기타/중간). source='quick' 기록.
+    """
+    with st.form("quick_add_form", clear_on_submit=True, border=False):
+        qc1, qc2 = st.columns([4, 1])
+        with qc1:
+            title = st.text_input("빠른 추가", placeholder="⚡ 할 일 입력 후 Enter — 오늘 23:59 마감으로 등록",
+                                  label_visibility="collapsed", key="quick_add_input")
+        with qc2:
+            submitted = st.form_submit_button("추가", use_container_width=True, type="primary")
+    if submitted and title.strip():
+        deadline = datetime.combine(now_kst().date(), dt_time(23, 59), tzinfo=KST)
+        add_task(title.strip(), "", deadline, "기타", "중간", None, "", source="quick")
+        st.toast("✅ 추가!")
+        st.rerun(scope="fragment")
 
 _SECTIONS = [
     ("overdue", "🚨 기한 초과"),
@@ -125,6 +146,9 @@ def _render_stat_filter(all_active, all_completed):
 
 @st.fragment
 def _today_fragment():
+    # ── 빠른 추가 (최상단 고정) ──
+    _render_quick_add()
+
     # 데이터 로드는 fragment 내부 — 카드 액션 후 fragment 리런만으로 최신화된다.
     all_active = load_tasks(show_completed=False, search_query="", category="전체", priority="전체") or []
     all_completed = load_completed_tasks(100) or []
