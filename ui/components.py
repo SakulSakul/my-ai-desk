@@ -15,14 +15,14 @@ from core.models import (
 
 
 # CSS — Phase 2 디자인 시스템
-# Pretendard(CDN) · 액센트 1색(#2563EB) · 카드형 · 모바일 우선
+# 헤딩=명시적 세리프(Georgia) · 본문=시스템 산세리프 · 액센트 1색(#2563EB) · 카드형 · 모바일 우선
+# 웹폰트 로드 없음(Phase 2.1 폰트 정책: 현재 폴백 룩을 의도된 디자인으로 승격)
 def inject_css():
     st.markdown("""
 <style>
-    @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
-
     :root {
-        --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
+        --font-sans: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;
+        --font-serif: Georgia, 'Times New Roman', serif;
         --black: #1a1a1a;
         --dark: #333333;
         --gray-800: #444444;
@@ -45,7 +45,6 @@ def inject_css():
         --radius-md: 12px;
         --transition: all 0.2s ease;
         /* 호환 별칭 — 잔존 참조가 있어도 새 시스템 안에서 렌더되도록 */
-        --font-serif: var(--font-sans);
         --gold: var(--accent);
         --gold-hover: var(--accent-dark);
         --gold-light: var(--accent-light);
@@ -54,6 +53,7 @@ def inject_css():
     html, body, [class*="css"] {
         font-family: var(--font-sans);
         font-weight: 400;
+        line-height: 1.55;
         color: var(--dark);
     }
 
@@ -70,16 +70,17 @@ def inject_css():
         font-family: var(--font-sans);
         font-weight: 500;
         min-height: 44px;
+        white-space: normal;
     }
 
     /* ── 헤더 영역 ── */
     .app-header {
         border-bottom: 2px solid var(--black);
-        padding-bottom: 0.9rem;
-        margin-bottom: 1rem;
+        padding-bottom: 16px;
+        margin-bottom: 16px;
     }
     .app-header h1 {
-        font-family: var(--font-sans);
+        font-family: var(--font-serif);
         font-size: 1.6rem;
         font-weight: 700;
         color: var(--black);
@@ -91,20 +92,25 @@ def inject_css():
         font-size: 0.78rem;
         font-weight: 500;
         color: var(--accent);
-        letter-spacing: 2px;
+        letter-spacing: 0.09em;
         text-transform: uppercase;
-        margin-top: 0.2rem;
+        margin-top: 4px;
     }
 
     /* ── 통계 카드 ── */
     .stat-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 0.5rem;
-        margin: 0.8rem 0 1.2rem 0;
+        gap: 8px;
+        margin: 12px 0 20px 0;
     }
     .stat-box {
-        padding: 0.9rem 0.6rem;
+        padding: 16px 8px;
+        min-height: 88px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
         text-align: center;
         background: var(--gray-100);
         border: 1px solid var(--gray-200);
@@ -113,6 +119,7 @@ def inject_css():
     }
     .stat-box:hover { border-color: var(--accent); }
     .stat-number {
+        font-family: var(--font-serif);
         font-size: 1.8rem;
         font-weight: 700;
         line-height: 1;
@@ -121,18 +128,19 @@ def inject_css():
         font-size: 0.7rem;
         font-weight: 500;
         color: var(--gray-600);
-        margin-top: 0.4rem;
+        margin-top: 8px;
         letter-spacing: 1px;
     }
 
     /* ── 섹션 헤더 ── */
     .section-header {
+        font-family: var(--font-serif);
         font-size: 1.05rem;
         font-weight: 700;
         color: var(--black);
         border-bottom: 1px solid var(--gray-200);
-        padding-bottom: 0.5rem;
-        margin: 1.4rem 0 0.8rem 0;
+        padding-bottom: 8px;
+        margin: 24px 0 12px 0;
         letter-spacing: -0.3px;
     }
     .section-header-light {
@@ -148,9 +156,10 @@ def inject_css():
     .task-card {
         background: var(--white);
         border: 1px solid var(--gray-200);
+        border-left: 4px solid transparent;
         border-radius: var(--radius-md);
-        padding: 0.85rem 1rem;
-        margin-bottom: 0.5rem;
+        padding: 12px 16px;
+        margin-bottom: 8px;
         transition: var(--transition);
         position: relative;
     }
@@ -172,6 +181,7 @@ def inject_css():
         gap: 0.8rem;
     }
     .task-title {
+        font-family: var(--font-serif);
         font-size: 0.95rem;
         font-weight: 500;
         color: var(--black);
@@ -208,7 +218,7 @@ def inject_css():
     .task-meta {
         font-size: 0.76rem;
         color: var(--gray-400);
-        margin-top: 0.4rem;
+        margin-top: 8px;
         display: flex;
         flex-wrap: wrap;
         gap: 0.3rem 1rem;
@@ -244,8 +254,8 @@ def inject_css():
         background: var(--gray-100);
         border: 1px solid var(--gray-200);
         border-radius: var(--radius-md);
-        padding: 2rem 1rem;
-        margin: 1rem 0;
+        padding: 32px 16px;
+        margin: 16px 0;
     }
 
     /* ── 차트 영역 ── */
@@ -285,6 +295,7 @@ def inject_css():
     }
     .timeline-content { flex: 1; }
     .timeline-title {
+        font-family: var(--font-serif);
         font-size: 0.85rem; font-weight: 500; color: var(--black);
     }
     .timeline-detail { font-size: 0.72rem; color: var(--gray-400); }
@@ -301,6 +312,7 @@ def inject_css():
         border-radius: var(--radius-md);
     }
     .report-number {
+        font-family: var(--font-serif);
         font-size: 1.3rem; font-weight: 700;
     }
     .report-label { font-size: 0.68rem; font-weight: 500; color: var(--gray-400); letter-spacing: 1px; }
@@ -365,8 +377,9 @@ def inject_css():
         background: var(--accent-light);
     }
     .week-day-header {
+        font-family: var(--font-serif);
         font-size: 0.82rem; font-weight: 700; color: var(--black);
-        margin-bottom: 0.4rem;
+        margin-bottom: 8px;
     }
     .week-day-header-today { color: var(--accent-dark); }
     .week-task-item {
@@ -392,6 +405,7 @@ def inject_css():
     .memo-time { font-size: 0.68rem; color: var(--gray-400); margin-top: 0.3rem; }
 
     .selected-date-header {
+        font-family: var(--font-serif);
         font-size: 0.95rem; font-weight: 700; color: var(--black);
         padding: 0.5rem 0;
         border-bottom: 2px solid var(--accent);
@@ -404,17 +418,25 @@ def inject_css():
 
     /* ── 로그인 ── */
     .login-wrap {
-        text-align: center; padding: 4rem 1rem;
+        text-align: center; padding: 40px 16px 40px 16px;
     }
     .login-wrap h1 {
-        font-family: var(--font-sans);
+        font-family: var(--font-serif);
         font-size: 1.9rem; font-weight: 700; color: var(--black);
         letter-spacing: -0.5px;
+        margin: 0 0 8px 0;
     }
     .login-wrap p {
         color: var(--gray-400); font-size: 0.85rem; font-weight: 500;
-        letter-spacing: 2px; text-transform: uppercase;
+        letter-spacing: 0.09em; text-transform: uppercase;
+        margin: 0;
     }
+    /* 로그인 폼(인증 게이트에서만 렌더): 가운데 단일 축, 최대폭 380px */
+    .stApp:has(.login-wrap) .block-container {
+        max-width: 412px;
+        padding-left: 16px; padding-right: 16px;
+    }
+    .stApp:has(.login-wrap) .stTextInput { margin-bottom: 16px; }
 
     /* ── 모바일 (~390px 1열 확인 기준) ── */
     @media (max-width: 768px) {

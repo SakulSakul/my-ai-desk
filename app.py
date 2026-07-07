@@ -48,13 +48,13 @@ init_session_state()
 # ── 비밀번호 잠금 ──
 def check_password():
     if st.session_state.authenticated: return True
+    # 가운데 축 단일화(Phase 2.1): 컬럼 분할 없이 단일 축 — 폭 제한(380px)은
+    # components.py 의 `.stApp:has(.login-wrap) .block-container` CSS 가 담당.
     st.markdown('<div class="login-wrap"><h1>My AI Desk</h1><p>CSR · Task Manager</p></div>', unsafe_allow_html=True)
-    c1, c2, c3 = st.columns([1,2,1])
-    with c2:
-        pwd = st.text_input("비밀번호", type="password", key="pwd_input")
-        if st.button("로그인", use_container_width=True, type="primary"):
-            if pwd == APP_PASSWORD: st.session_state.authenticated = True; st.rerun()
-            else: st.error("비밀번호가 틀렸습니다.")
+    pwd = st.text_input("비밀번호", type="password", key="pwd_input")
+    if st.button("로그인", use_container_width=True, type="primary"):
+        if pwd == APP_PASSWORD: st.session_state.authenticated = True; st.rerun()
+        else: st.error("비밀번호가 틀렸습니다.")
     return False
 
 if not check_password(): st.stop()

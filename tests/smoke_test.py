@@ -289,15 +289,27 @@ def test_no_sidebar_usage(fake_db):
     assert len(at.sidebar.markdown) == 0 and len(at.sidebar.button) == 0
 
 
-# ── ⑥ CSS: Pretendard CDN 포함 + 구 @font-face/세리프 부재 ────────
+# ── ⑥ CSS: 폰트 정책(Phase 2.1) — Pretendard 부재 + 헤딩 세리프 스택 존재 ──
 def test_css_design_system():
     css_src = (ROOT / "ui" / "components.py").read_text(encoding="utf-8")
-    assert "cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" in css_src
+    # 웹폰트 로드 없음: Pretendard CDN/선언 부재, 깨진 @font-face 부재 유지
+    assert "pretendard" not in css_src.lower()
     assert "@font-face" not in css_src
+    assert "@import" not in css_src
     assert "Noto+Serif" not in css_src and "Noto Serif" not in css_src
+    # 헤딩은 명시적 세리프 스택 (현재 폴백 룩의 의도적 승격)
+    assert "--font-serif: Georgia, 'Times New Roman', serif;" in css_src
+    for heading_cls in (".app-header h1", ".section-header", ".stat-number", ".task-title", ".login-wrap h1"):
+        idx = css_src.index(heading_cls)
+        assert "var(--font-serif)" in css_src[idx:idx + 300], f"{heading_cls} 세리프 미적용"
+    # 본문·버튼은 시스템 산세리프 스택
+    assert "--font-sans: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;" in css_src
+    # 액센트·no-shadow 정책 유지
     assert "#2563EB" in css_src
     assert "text-shadow" not in css_src
-    # 앱 어디에도 세리프 폰트 패밀리 선언이 남지 않아야 (별칭 정의 제외)
+    # 다른 모듈에 개별 폰트 선언이 새지 않아야(변수 참조만 허용)
     for f in [ROOT / "app.py"] + sorted((ROOT / "ui").glob("*.py")):
+        if f.name == "components.py":
+            continue
         src = f.read_text(encoding="utf-8")
-        assert "Georgia" not in src and "serif KR" not in src, f.name
+        assert "Georgia" not in src and "Pretendard" not in src, f.name
