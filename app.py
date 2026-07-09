@@ -36,7 +36,6 @@ def init_session_state():
         "selected_date": None,
         "filter_category": "전체", "filter_priority": "전체",
         "filter_tag": "", "sort_by": "마감일순",
-        "stat_filter": None,  # "active", "overdue", "today", "completed_today"
     }
     for key, val in defaults.items():
         if key not in st.session_state:
