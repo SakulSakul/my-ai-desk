@@ -258,11 +258,31 @@ def inject_css():
     }
     [class*="st-key-tcard_overdue"] { border-left-color: var(--red); background: var(--red-light); }
     [class*="st-key-tcard_today"] { border-left-color: var(--orange); background: var(--orange-light); }
+    /* [2.3-A] 버튼-메타 겹침 회귀 수정: 카드 내부 요소를 '자연 흐름'으로 강제.
+       마크다운 컨테이너 높이 붕괴·음수 마진·transform 어느 쪽이 원인이어도
+       메타 줄 아래 8px 간격으로 버튼 행이 오도록 보장 (카드 높이 증가 허용) */
+    [class*="st-key-tcard_"] [data-testid="stElementContainer"],
+    [class*="st-key-tcard_"] [data-testid="stMarkdown"],
+    [class*="st-key-tcard_"] [data-testid="stMarkdownContainer"] {
+        margin: 0 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        position: static !important;
+        transform: none !important;
+    }
+    [class*="st-key-tcard_"] [data-testid="stVerticalBlock"] {
+        gap: 8px !important;
+        position: static !important;
+    }
     /* 카드 내 액션 버튼: 컴팩트 아웃라인, 전폭 금지(데스크톱 각 ~160px),
-       모바일에서도 2열 유지(스택 방지) + 터치 44px */
+       모바일에서도 2열 유지(스택 방지) + 터치 44px. 메타 ↔ 버튼 8px */
     [class*="st-key-tcard_"] [data-testid="stHorizontalBlock"] {
         flex-wrap: nowrap !important;
         gap: 8px !important;
+        margin: 8px 0 0 0 !important;
+        position: static !important;
+        transform: none !important;
     }
     [class*="st-key-tcard_"] [data-testid="stColumn"] {
         flex: 0 1 160px !important;
