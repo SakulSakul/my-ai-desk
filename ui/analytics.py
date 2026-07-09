@@ -8,7 +8,7 @@ import streamlit as st
 from core.models import (
     CATEGORY_COLORS, CATEGORY_ICONS,
     format_dt, parse_deadline_kst, calc_duration, calc_duration_minutes,
-    format_minutes, parse_tags, build_weekly_report, build_monthly_report,
+    format_duration_compact, parse_tags, build_weekly_report, build_monthly_report,
 )
 from core.db import load_all_tasks, load_tasks, load_completed_tasks
 from ui.components import render_category_chart, render_time_chart
@@ -45,7 +45,7 @@ def render_analytics(all_active, all_completed):
         with rt1:
             wr = build_weekly_report(all_completed, all_active)
             st.markdown(f'<div class="section-header">{wr["period"]}</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="report-grid"><div class="report-box"><div class="report-number" style="color:var(--green);">{wr["total_completed"]}</div><div class="report-label">완료</div></div><div class="report-box"><div class="report-number" style="color:var(--accent);">{format_minutes(wr["total_minutes"])}</div><div class="report-label">투자 시간</div></div><div class="report-box"><div class="report-number" style="color:var(--orange);">{format_minutes(wr["total_minutes"]/max(wr["total_completed"],1))}</div><div class="report-label">건당 평균</div></div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="report-grid"><div class="report-box"><div class="report-number" style="color:var(--green);">{wr["total_completed"]}</div><div class="report-label">완료</div></div><div class="report-box"><div class="report-number" style="color:var(--accent);">{format_duration_compact(wr["total_minutes"])}</div><div class="report-label">투자 시간</div></div><div class="report-box"><div class="report-number" style="color:var(--orange);">{format_duration_compact(wr["total_minutes"]/max(wr["total_completed"],1))}</div><div class="report-label">건당 평균</div></div></div>', unsafe_allow_html=True)
             if wr['cat_counts']:
                 for cat,cnt in sorted(wr['cat_counts'].items(), key=lambda x:x[1], reverse=True):
                     st.markdown(f"{CATEGORY_ICONS.get(cat,'')} **{cat}**: {cnt}건")
@@ -58,7 +58,7 @@ def render_analytics(all_active, all_completed):
         with rt2:
             mr = build_monthly_report(all_completed, all_active)
             st.markdown(f'<div class="section-header">{mr["period"]}</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="report-grid"><div class="report-box"><div class="report-number" style="color:var(--green);">{mr["total_completed"]}</div><div class="report-label">완료</div></div><div class="report-box"><div class="report-number" style="color:var(--accent);">{format_minutes(mr["total_minutes"])}</div><div class="report-label">투자 시간</div></div><div class="report-box"><div class="report-number" style="color:var(--accent-dark);">{format_minutes(mr["total_minutes"]/max(mr["total_completed"],1))}</div><div class="report-label">건당 평균</div></div></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="report-grid"><div class="report-box"><div class="report-number" style="color:var(--green);">{mr["total_completed"]}</div><div class="report-label">완료</div></div><div class="report-box"><div class="report-number" style="color:var(--accent);">{format_duration_compact(mr["total_minutes"])}</div><div class="report-label">투자 시간</div></div><div class="report-box"><div class="report-number" style="color:var(--accent-dark);">{format_duration_compact(mr["total_minutes"]/max(mr["total_completed"],1))}</div><div class="report-label">건당 평균</div></div></div>', unsafe_allow_html=True)
             if mr['cat_counts']:
                 for cat,cnt in sorted(mr['cat_counts'].items(), key=lambda x:x[1], reverse=True):
                     st.markdown(f"{CATEGORY_ICONS.get(cat,'')} **{cat}**: {cnt}건")
@@ -73,6 +73,6 @@ def render_analytics(all_active, all_completed):
                     cat = ct.get("category","기타"); color = CATEGORY_COLORS.get(cat,"#8c8c8c")
                     tags = parse_tags(ct.get("tags")); th = " ".join(f'<span class="badge-tag">#{t}</span>' for t in tags)
                     tm = calc_duration_minutes(ct.get("timer_started_at"),ct.get("timer_ended_at"))
-                    ts = f" · ⏱ {format_minutes(tm)}" if tm>0 else ""
+                    ts = f" · ⏱ {format_duration_compact(tm)}" if tm>0 else ""
                     st.markdown(f'<div class="timeline-item"><div class="timeline-date">{ds}</div><div class="timeline-content"><div class="timeline-title"><span style="color:{color};">●</span> {ct["title"]}</div><div class="timeline-detail">{cat}{" · "+dur if dur else ""}{ts}{" · "+th if th else ""}</div></div></div>', unsafe_allow_html=True)
             else: st.caption("아직 완료된 업무가 없습니다.")

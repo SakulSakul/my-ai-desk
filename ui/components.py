@@ -10,7 +10,7 @@ from collections import Counter, defaultdict
 from core.models import (
     CATEGORIES, CATEGORY_COLORS, CATEGORY_ICONS, PRIORITIES,
     now_kst, parse_deadline_kst, get_urgency,
-    calc_duration_minutes, format_minutes,
+    calc_duration_minutes, format_duration_compact,
 )
 
 
@@ -31,9 +31,9 @@ def inject_css():
         --gray-200: #e0e0e0;
         --gray-100: #f5f7fa;
         --white: #ffffff;
-        --accent: #2563EB;
-        --accent-dark: #1D4ED8;
-        --accent-light: #2563EB14;
+        --accent: #3056D3;
+        --accent-dark: #2646AC;
+        --accent-light: #3056D314;
         --red: #c0392b;
         --red-light: #c0392b12;
         --orange: #d4880f;
@@ -91,7 +91,7 @@ def inject_css():
     .app-header-sub {
         font-size: 0.78rem;
         font-weight: 500;
-        color: var(--accent);
+        color: var(--gray-600);
         letter-spacing: 0.09em;
         text-transform: uppercase;
         margin-top: 4px;
@@ -117,7 +117,7 @@ def inject_css():
         border-radius: var(--radius-md);
         transition: var(--transition);
     }
-    .stat-box:hover { border-color: var(--accent); }
+    .stat-box:hover { border-color: var(--gray-400); }
     .stat-number {
         font-family: var(--font-serif);
         font-size: 1.8rem;
@@ -163,7 +163,7 @@ def inject_css():
         transition: var(--transition);
         position: relative;
     }
-    .task-card:hover { border-color: var(--accent); background: var(--accent-light); }
+    .task-card:hover { border-color: var(--gray-400); background: var(--gray-100); }
     .task-card.overdue {
         border-left: 4px solid var(--red);
         background: var(--red-light);
@@ -206,7 +206,7 @@ def inject_css():
         white-space: nowrap;
     }
     .badge-priority-높음 { border-color: var(--red); color: var(--red); }
-    .badge-priority-중간 { border-color: var(--accent); color: var(--accent); }
+    .badge-priority-중간 { border-color: var(--gray-400); color: var(--gray-600); }
     .badge-priority-낮음 { border-color: var(--green); color: var(--green); }
     .badge-tag {
         font-size: 0.63rem;
@@ -232,7 +232,7 @@ def inject_css():
         width: 50px; height: 4px; background: var(--gray-200);
         border-radius: 999px; overflow: hidden;
     }
-    .progress-bar-mini-fill { height: 100%; background: var(--accent); }
+    .progress-bar-mini-fill { height: 100%; background: var(--green); }
     .timer-active {
         display: inline-flex; align-items: center; gap: 0.3rem;
         border: 1px solid var(--red); border-radius: 999px;
@@ -243,6 +243,53 @@ def inject_css():
     @keyframes pulse-border {
         0%, 100% { border-color: #e0b0b0; }
         50% { border-color: var(--red); }
+    }
+
+    /* ── 오늘 뷰 카드 컨테이너 (st.container key=tcard_*) ──
+       HTML 카드와 동일한 룩에 액션 버튼을 '카드 안'에 내장한다. */
+    [class*="st-key-tcard_"] {
+        background: var(--white);
+        border: 1px solid var(--gray-200);
+        border-left: 4px solid transparent;
+        border-radius: var(--radius-md);
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        gap: 8px;
+    }
+    [class*="st-key-tcard_overdue"] { border-left-color: var(--red); background: var(--red-light); }
+    [class*="st-key-tcard_today"] { border-left-color: var(--orange); background: var(--orange-light); }
+    /* 카드 내 액션 버튼: 컴팩트 아웃라인, 전폭 금지(데스크톱 각 ~160px),
+       모바일에서도 2열 유지(스택 방지) + 터치 44px */
+    [class*="st-key-tcard_"] [data-testid="stHorizontalBlock"] {
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+    }
+    [class*="st-key-tcard_"] [data-testid="stColumn"] {
+        flex: 0 1 160px !important;
+        min-width: 120px !important;
+        width: auto !important;
+    }
+    [class*="st-key-tcard_"] .stButton > button {
+        width: 100%;
+        min-height: 44px;
+        padding: 4px 12px;
+        background: transparent;
+        font-size: 0.85rem;
+    }
+    /* 완료 = 액센트 아웃라인 / 내일로 = 중립 아웃라인 (진한 채움 금지) */
+    [class*="st-key-tcard_"] [data-testid="stColumn"]:nth-of-type(1) .stButton > button {
+        border: 1px solid var(--accent);
+        color: var(--accent);
+    }
+    [class*="st-key-tcard_"] [data-testid="stColumn"]:nth-of-type(1) .stButton > button:hover {
+        border-color: var(--accent-dark); color: var(--accent-dark); background: var(--accent-light);
+    }
+    [class*="st-key-tcard_"] [data-testid="stColumn"]:nth-of-type(2) .stButton > button {
+        border: 1px solid var(--gray-200);
+        color: var(--dark);
+    }
+    [class*="st-key-tcard_"] [data-testid="stColumn"]:nth-of-type(2) .stButton > button:hover {
+        border-color: var(--gray-400); background: var(--gray-100);
     }
 
     /* ── 빈 상태 ── */
@@ -323,6 +370,7 @@ def inject_css():
     .time-chart-bar {
         height: 16px; display: flex; align-items: center; border-radius: 4px;
         padding: 0 6px; font-size: 0.65rem; color: var(--white); font-weight: 500;
+        white-space: nowrap; /* '기타' 행 라벨 겹침 해소 */
         transition: width 0.5s ease;
     }
 
@@ -348,14 +396,14 @@ def inject_css():
         transition: var(--transition);
         font-variant-numeric: tabular-nums;
     }
-    .cal-day:hover { background: var(--accent-light); }
+    .cal-day:hover { background: var(--gray-100); }
     .cal-day-empty { cursor: default; }
     .cal-day-empty:hover { background: transparent; }
     .cal-day-today {
-        background: var(--accent); color: var(--white) !important; font-weight: 700;
+        background: var(--black); color: var(--white) !important; font-weight: 700;
     }
-    .cal-day-today:hover { background: var(--accent-dark); }
-    .cal-day-selected { outline: 2px solid var(--accent); outline-offset: -2px; }
+    .cal-day-today:hover { background: var(--dark); }
+    .cal-day-selected { outline: 2px solid var(--black); outline-offset: -2px; }
     .cal-day-sun { color: var(--red); }
     .cal-day-sat { color: var(--blue); }
     .cal-day-today.cal-day-sun, .cal-day-today.cal-day-sat { color: var(--white) !important; }
@@ -373,15 +421,15 @@ def inject_css():
         padding: 0.8rem; margin-bottom: 0.4rem;
     }
     .week-day-card-today {
-        border-left: 4px solid var(--accent);
-        background: var(--accent-light);
+        border-left: 4px solid var(--black);
+        background: var(--gray-100);
     }
     .week-day-header {
         font-family: var(--font-serif);
         font-size: 0.82rem; font-weight: 700; color: var(--black);
         margin-bottom: 8px;
     }
-    .week-day-header-today { color: var(--accent-dark); }
+    .week-day-header-today { color: var(--black); }
     .week-task-item {
         font-size: 0.78rem; color: var(--gray-600); padding: 0.15rem 0;
         border-left: 2px solid var(--gray-200); padding-left: 0.6rem;
@@ -401,18 +449,18 @@ def inject_css():
         font-size: 0.82rem; color: var(--dark);
         transition: var(--transition);
     }
-    .memo-item:hover { border-color: var(--accent); }
+    .memo-item:hover { border-color: var(--gray-400); }
     .memo-time { font-size: 0.68rem; color: var(--gray-400); margin-top: 0.3rem; }
 
     .selected-date-header {
         font-family: var(--font-serif);
         font-size: 0.95rem; font-weight: 700; color: var(--black);
         padding: 0.5rem 0;
-        border-bottom: 2px solid var(--accent);
+        border-bottom: 2px solid var(--black);
         margin-bottom: 0.5rem;
     }
     .filter-active {
-        font-size: 0.78rem; color: var(--accent);
+        font-size: 0.78rem; color: var(--gray-600);
         font-weight: 500;
     }
 
@@ -429,6 +477,7 @@ def inject_css():
     .login-wrap p {
         color: var(--gray-400); font-size: 0.85rem; font-weight: 500;
         letter-spacing: 0.09em; text-transform: uppercase;
+        text-indent: 0.09em; /* 자간 후행 여백으로 인한 좌측 편이 상쇄 → 광학 중심 일치 */
         margin: 0;
     }
     /* 로그인 폼(인증 게이트에서만 렌더): 가운데 단일 축, 최대폭 380px */
@@ -458,6 +507,14 @@ def inject_css():
     }
 </style>
 """, unsafe_allow_html=True)
+
+    # 카테고리 배지 색 — 분석 차트와 동일한 단일 소스(core.models.CATEGORY_COLORS)에서 생성.
+    # 연한 틴트 배경(8%) + 동색 텍스트 + 연한 동색 보더(33%).
+    cat_badge_css = "\n".join(
+        f".badge-cat-{name} {{ background: {color}14; border-color: {color}55; color: {color}; }}"
+        for name, color in CATEGORY_COLORS.items()
+    )
+    st.markdown(f"<style>{cat_badge_css}</style>", unsafe_allow_html=True)
 
 
 def render_monthly_calendar(year, month, task_date_map, today_str, selected_date=None):
@@ -555,5 +612,5 @@ def render_time_chart(all_tasks):
         m = tbc.get(cat,0)
         if m == 0: continue
         color = CATEGORY_COLORS.get(cat,"#8c8c8c")
-        html += f'<div class="time-chart-row"><div class="time-chart-label">{CATEGORY_ICONS.get(cat,"")} {cat}</div><div class="time-chart-bar" style="width:{max(m/mx*100,8)}%;background:{color};">{format_minutes(m)}</div></div>'
+        html += f'<div class="time-chart-row"><div class="time-chart-label">{CATEGORY_ICONS.get(cat,"")} {cat}</div><div class="time-chart-bar" style="width:{max(m/mx*100,8)}%;background:{color};">{format_duration_compact(m)}</div></div>'
     return html

@@ -27,7 +27,7 @@ def render_memos():
         for memo in group:
             cm, cp, cd = st.columns([5,1,1])
             with cm:
-                bs = "border-color:var(--accent);" if is_pinned else ""
+                bs = "border-color:var(--black);" if is_pinned else ""
                 st.markdown(f'<div class="memo-item" style="{bs}">{memo["content"][:120]}{"..." if len(memo["content"])>120 else ""}<div class="memo-time">{format_dt(memo["created_at"])}</div></div>', unsafe_allow_html=True)
             with cp:
                 if st.button("📌", key=f"pin_{memo['id']}", help="고정 토글"): toggle_pin_memo(memo['id'], is_pinned); st.rerun()
