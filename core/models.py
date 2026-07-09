@@ -192,3 +192,23 @@ def split_today_sections(tasks, now=None):
         else:
             sections["rest"].append(t)
     return sections
+
+
+def format_duration_compact(mins):
+    """시간 표기 압축 — 단위 하나만 [Phase 2.2-G 신규, stdlib-only].
+
+    ≥3일(4320분) → "N일" / 1시간~3일 → "N시간" / <1시간 → "N분".
+    일·시간은 소수 1자리(.0 제거), 분은 정수(내림). 음수·None 은 0분 취급.
+    기존 format_minutes 는 무변경(골든 보존) — 표시 계층에서 이 함수로 교체.
+    """
+    mins = max(float(mins or 0), 0.0)
+
+    def _fmt1(x):
+        v = round(x, 1)
+        return f"{int(v)}" if v == int(v) else f"{v}"
+
+    if mins >= 4320:
+        return f"{_fmt1(mins / 1440)}일"
+    if mins >= 60:
+        return f"{_fmt1(mins / 60)}시간"
+    return f"{int(mins)}분"

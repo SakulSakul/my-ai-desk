@@ -10,7 +10,7 @@ from collections import Counter, defaultdict
 from core.models import (
     CATEGORIES, CATEGORY_COLORS, CATEGORY_ICONS, PRIORITIES,
     now_kst, parse_deadline_kst, get_urgency,
-    calc_duration_minutes, format_minutes,
+    calc_duration_minutes, format_duration_compact,
 )
 
 
@@ -370,6 +370,7 @@ def inject_css():
     .time-chart-bar {
         height: 16px; display: flex; align-items: center; border-radius: 4px;
         padding: 0 6px; font-size: 0.65rem; color: var(--white); font-weight: 500;
+        white-space: nowrap; /* '기타' 행 라벨 겹침 해소 */
         transition: width 0.5s ease;
     }
 
@@ -611,5 +612,5 @@ def render_time_chart(all_tasks):
         m = tbc.get(cat,0)
         if m == 0: continue
         color = CATEGORY_COLORS.get(cat,"#8c8c8c")
-        html += f'<div class="time-chart-row"><div class="time-chart-label">{CATEGORY_ICONS.get(cat,"")} {cat}</div><div class="time-chart-bar" style="width:{max(m/mx*100,8)}%;background:{color};">{format_minutes(m)}</div></div>'
+        html += f'<div class="time-chart-row"><div class="time-chart-label">{CATEGORY_ICONS.get(cat,"")} {cat}</div><div class="time-chart-bar" style="width:{max(m/mx*100,8)}%;background:{color};">{format_duration_compact(m)}</div></div>'
     return html
