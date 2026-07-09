@@ -327,8 +327,10 @@ def test_today_card_buttons_in_card(fake_db):
     assert '[class*="st-key-tcard_"]' in css_src
     assert "flex: 0 1 160px" in css_src
     assert "flex-wrap: nowrap" in css_src
-    # 진한 채움 금지: 완료=액센트 아웃라인 (type=primary 미사용)
-    assert 'st.button("완료 ✓"' in today_src and 'type="primary"' not in today_src.split('st.button("완료 ✓"')[1][:120]
+    # 진한 채움 금지: primary=액센트 '아웃라인'을 전역 CSS 가 보장 [2.3-D 규칙]
+    assert 'st.button("완료 ✓"' in today_src
+    primary_rule = css_src.split('button[kind*="primary"] {')[1][:200]
+    assert "background: transparent" in primary_rule, "primary 버튼이 채움 스타일"
     # 기능 동작(완료/내일로)은 기존 test_today_*_action 이 검증
     at = _login(_make_apptest())
     assert at.button(key="today_done_1") is not None
@@ -390,9 +392,58 @@ def test_format_duration_compact_golden():
 def test_login_polish(fake_db):
     css_src = (ROOT / "ui" / "components.py").read_text(encoding="utf-8")
     assert "text-indent: 0.09em" in css_src  # 광학 중심 보정
+    # [2.3-E] 주입 스크립트는 st.iframe 용 정적 자산으로 이동 + MutationObserver 상시 감시
+    pad_src = (ROOT / "ui" / "assets" / "numeric_pad.html").read_text(encoding="utf-8")
+    for attr in ("inputmode", "numeric", "pattern", "[0-9]*", "maxlength", "MutationObserver"):
+        assert attr in pad_src, f"숫자 패드 속성/감시 '{attr}' 누락"
     app_src = (ROOT / "app.py").read_text(encoding="utf-8")
-    for attr in ("inputmode", "numeric", "pattern", "[0-9]*", "maxlength"):
-        assert attr in app_src, f"숫자 패드 속성 '{attr}' 미주입"
+    assert "st.iframe" in app_src and "numeric_pad.html" in app_src
+    # [2.3-C] deprecated API 미사용
+    assert "components.v1" not in app_src and "components.html" not in app_src
     # 주입 실패와 무관하게 로그인 자체 동작 (기존 login 플로우 재확인)
     at = _login(_make_apptest())
     assert at.session_state["authenticated"] is True
+
+
+# ══ Phase 2.3 신규 검증 ═══════════════════════════════════════════
+
+# ── [2.3-A] 카드 메타-버튼 비중첩 (자연 흐름 강제) ────────────────
+def test_card_meta_button_no_overlap():
+    css_src = (ROOT / "ui" / "components.py").read_text(encoding="utf-8")
+    tcard_css = css_src.split('[class*="st-key-tcard_"]', 1)[1]
+    tcard_css = tcard_css.split("/* ── 빈 상태")[0]
+    # 메타 ↔ 버튼 8px 명시 간격 + 자연 흐름 강제(높이 붕괴/음수 마진/transform 방어)
+    assert "margin: 8px 0 0 0 !important" in tcard_css
+    assert "overflow: visible !important" in tcard_css
+    assert "position: static !important" in tcard_css
+    # tcard 범위에 음수 마진 없음
+    assert "margin: -" not in tcard_css and "margin-top: -" not in tcard_css
+    # 카드 본문은 단일 래퍼로 묶음
+    today_src = (ROOT / "ui" / "today.py").read_text(encoding="utf-8")
+    assert 'class="tcard-body"' in today_src
+
+
+# ── [2.3-D] 버튼 이모지 부재 + 스타일 단일 소스 ───────────────────
+def test_button_style_unified():
+    # ▶/◀ 는 달력 내비 '기호'로 유지 대상 → 검사 제외 (시작 버튼 라벨은 '시작'으로 교체됨)
+    emojis = "✅✏🗑💾📌🔄⏹↩🎉🚨⚡📋"
+    for f in [ROOT / "app.py"] + sorted((ROOT / "ui").glob("*.py")):
+        for line in f.read_text(encoding="utf-8").splitlines():
+            if "st.button(" in line or "form_submit_button(" in line:
+                label = line.split("utton(", 1)[1]
+                assert not any(e in label for e in emojis), f"{f.name} 버튼에 이모지: {line.strip()[:80]}"
+    css_src = (ROOT / "ui" / "components.py").read_text(encoding="utf-8")
+    # 전역 아웃라인 체계(단일 소스): 기본=중립, primary=액센트, 삭제 키=레드
+    base_rule = css_src.split(".stButton > button, .stFormSubmitButton > button {")[1][:400]
+    assert "background: transparent" in base_rule
+    assert 'button[kind*="primary"]' in css_src
+    assert '[class*="st-key-del_"]' in css_src and '[class*="st-key-cdel_"]' in css_src
+
+
+# ── [2.3-B] 버전 핀 ───────────────────────────────────────────────
+def test_requirements_pinned():
+    req = (ROOT / "requirements.txt").read_text(encoding="utf-8")
+    assert "streamlit==1.59.1" in req
+    assert "supabase==2.31.0" in req
+    assert "python-dateutil==2.9.0.post0" in req
+    assert ">=" not in req

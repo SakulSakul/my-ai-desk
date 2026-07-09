@@ -1,0 +1,24 @@
+<!-- 비밀번호 숫자 패드 주입 [Phase 2.3-E] — st.iframe(srcdoc) 로 임베드.
+     Streamlit iframe sandbox 는 allow-same-origin + allow-scripts 를 포함하므로
+     parent DOM 접근 가능(실측: 프론트엔드 번들의 sandbox 정책 확인).
+     1회 주입은 안드로이드 실기기에서 미적용(리런 시 입력 필드 재생성으로 속성 유실)
+     → MutationObserver 상시 감시로 등장/재생성 때마다 재부여.
+     접근 실패 시 catch — 일반 키보드 폴백, 로그인 로직과 무관. -->
+<script>
+(function () {
+    try {
+        var doc = window.parent.document;
+        function apply() {
+            doc.querySelectorAll('input[type="password"]').forEach(function (inp) {
+                if (inp.getAttribute('inputmode') !== 'numeric') {
+                    inp.setAttribute('inputmode', 'numeric');
+                    inp.setAttribute('pattern', '[0-9]*');
+                    inp.setAttribute('maxlength', '4');
+                }
+            });
+        }
+        apply();
+        new MutationObserver(apply).observe(doc.body, { childList: true, subtree: true });
+    } catch (e) { /* 폴백: 일반 키보드 */ }
+})();
+</script>

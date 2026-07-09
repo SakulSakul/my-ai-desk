@@ -64,13 +64,45 @@ def inject_css():
     }
     .stApp > header { background: transparent; }
 
-    /* 버튼 — 모바일 터치 타겟 */
+    /* ── 버튼 전역 규칙 [2.3-D 디자인 규칙 승격] — 오늘 뷰 아웃라인 체계를 전 화면 적용.
+       기본(보조)=중립 아웃라인 / primary(완료·저장·추가·로그인)=액센트 아웃라인 /
+       파괴적(삭제, 키 접두 del_·cdel_)=레드 아웃라인. 채움 금지, 터치 44px. */
     .stButton > button, .stFormSubmitButton > button {
         border-radius: var(--radius);
         font-family: var(--font-sans);
         font-weight: 500;
         min-height: 44px;
         white-space: normal;
+        background: transparent;
+        border: 1px solid var(--gray-200);
+        color: var(--dark);
+    }
+    .stButton > button:hover, .stFormSubmitButton > button:hover {
+        border-color: var(--gray-400);
+        background: var(--gray-100);
+        color: var(--dark);
+    }
+    .stButton > button[kind*="primary"], .stFormSubmitButton > button[kind*="primary"] {
+        background: transparent;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+    }
+    .stButton > button[kind*="primary"]:hover, .stFormSubmitButton > button[kind*="primary"]:hover {
+        border-color: var(--accent-dark);
+        color: var(--accent-dark);
+        background: var(--accent-light);
+    }
+    .stButton > button:active, .stButton > button:focus:not(:focus-visible) {
+        color: inherit;
+    }
+    [class*="st-key-del_"] .stButton > button, [class*="st-key-cdel_"] .stButton > button {
+        border-color: var(--red);
+        color: var(--red);
+    }
+    [class*="st-key-del_"] .stButton > button:hover, [class*="st-key-cdel_"] .stButton > button:hover {
+        border-color: var(--red);
+        color: var(--red);
+        background: var(--red-light);
     }
 
     /* ── 헤더 영역 ── */
@@ -258,11 +290,31 @@ def inject_css():
     }
     [class*="st-key-tcard_overdue"] { border-left-color: var(--red); background: var(--red-light); }
     [class*="st-key-tcard_today"] { border-left-color: var(--orange); background: var(--orange-light); }
+    /* [2.3-A] 버튼-메타 겹침 회귀 수정: 카드 내부 요소를 '자연 흐름'으로 강제.
+       마크다운 컨테이너 높이 붕괴·음수 마진·transform 어느 쪽이 원인이어도
+       메타 줄 아래 8px 간격으로 버튼 행이 오도록 보장 (카드 높이 증가 허용) */
+    [class*="st-key-tcard_"] [data-testid="stElementContainer"],
+    [class*="st-key-tcard_"] [data-testid="stMarkdown"],
+    [class*="st-key-tcard_"] [data-testid="stMarkdownContainer"] {
+        margin: 0 !important;
+        height: auto !important;
+        min-height: 0 !important;
+        overflow: visible !important;
+        position: static !important;
+        transform: none !important;
+    }
+    [class*="st-key-tcard_"] [data-testid="stVerticalBlock"] {
+        gap: 8px !important;
+        position: static !important;
+    }
     /* 카드 내 액션 버튼: 컴팩트 아웃라인, 전폭 금지(데스크톱 각 ~160px),
-       모바일에서도 2열 유지(스택 방지) + 터치 44px */
+       모바일에서도 2열 유지(스택 방지) + 터치 44px. 메타 ↔ 버튼 8px */
     [class*="st-key-tcard_"] [data-testid="stHorizontalBlock"] {
         flex-wrap: nowrap !important;
         gap: 8px !important;
+        margin: 8px 0 0 0 !important;
+        position: static !important;
+        transform: none !important;
     }
     [class*="st-key-tcard_"] [data-testid="stColumn"] {
         flex: 0 1 160px !important;
@@ -276,21 +328,7 @@ def inject_css():
         background: transparent;
         font-size: 0.85rem;
     }
-    /* 완료 = 액센트 아웃라인 / 내일로 = 중립 아웃라인 (진한 채움 금지) */
-    [class*="st-key-tcard_"] [data-testid="stColumn"]:nth-of-type(1) .stButton > button {
-        border: 1px solid var(--accent);
-        color: var(--accent);
-    }
-    [class*="st-key-tcard_"] [data-testid="stColumn"]:nth-of-type(1) .stButton > button:hover {
-        border-color: var(--accent-dark); color: var(--accent-dark); background: var(--accent-light);
-    }
-    [class*="st-key-tcard_"] [data-testid="stColumn"]:nth-of-type(2) .stButton > button {
-        border: 1px solid var(--gray-200);
-        color: var(--dark);
-    }
-    [class*="st-key-tcard_"] [data-testid="stColumn"]:nth-of-type(2) .stButton > button:hover {
-        border-color: var(--gray-400); background: var(--gray-100);
-    }
+    /* 완료=액센트/내일로=중립은 전역 kind 규칙이 담당(완료 버튼=primary) */
 
     /* ── 빈 상태 ── */
     .empty-state {

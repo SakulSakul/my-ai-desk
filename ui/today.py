@@ -82,15 +82,15 @@ def _render_task_card(task):
     urg_html = f'<span class="urgency-tag urgency-{urgency}">{urgency_label}</span>' if urgency_label else ""
     with st.container(key=f"tcard_{urgency}_{task['id']}"):
         st.markdown(
-            f'<div class="task-header">'
+            f'<div class="tcard-body"><div class="task-header">'
             f'<span class="task-title">{task["title"]}</span>'
             f'<div class="task-badges"><span class="badge badge-priority-{pri}">{pri}</span><span class="badge badge-cat-{cat}">{cat}</span></div>'
-            f'</div><div class="task-meta"><span>{dl_span}</span>{urg_html}</div>',
+            f'</div><div class="task-meta"><span>{dl_span}</span>{urg_html}</div></div>',
             unsafe_allow_html=True,
         )
         b1, b2 = st.columns(2)
         with b1:
-            if st.button("완료 ✓", key=f"today_done_{task['id']}", use_container_width=True):
+            if st.button("완료 ✓", key=f"today_done_{task['id']}", use_container_width=True, type="primary"):
                 complete_task(task)
                 st.toast("🎉 수고하셨습니다!")
                 _refresh()
@@ -112,11 +112,10 @@ def _render_completed_today(all_completed):
         return
     with st.expander(f"✅ 오늘 완료한 업무 ({len(done_today)}건)", expanded=False):
         for t in done_today:
-            pi = PRIORITIES.get(t.get("priority", "중간"), "")
             cat = t.get("category", "기타")
             st.markdown(
                 f'<div class="task-card completed-card"><div class="task-header">'
-                f'<span class="task-title" style="text-decoration:line-through;">{pi} {t["title"]}</span>'
+                f'<span class="task-title" style="text-decoration:line-through;">{t["title"]}</span>'
                 f'<div class="task-badges"><span class="badge badge-cat-{cat}">{cat}</span></div>'
                 f'</div><div class="task-meta"><span>완료: {format_dt(t["completed_at"])}</span></div></div>',
                 unsafe_allow_html=True,

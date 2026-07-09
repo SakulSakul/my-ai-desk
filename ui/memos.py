@@ -14,10 +14,10 @@ def render_memos():
     memo_input = st.text_area("메모", placeholder="번뜩이는 아이디어, URL, 메모...", height=80, label_visibility="collapsed", key="memo_input")
     mc1, mc2 = st.columns([3,1])
     with mc1:
-        if st.button("💾 저장", use_container_width=True, type="primary"):
+        if st.button("저장", type="primary"):
             if memo_input.strip(): add_memo(memo_input.strip()); st.toast("✅ 메모 저장!"); st.rerun()
     with mc2:
-        if st.button("📌", use_container_width=True):
+        if st.button("고정"):
             if memo_input.strip(): add_memo(memo_input.strip(), pinned=True); st.toast("📌 고정!"); st.rerun()
 
     memos = load_memos() or []
@@ -30,9 +30,9 @@ def render_memos():
                 bs = "border-color:var(--black);" if is_pinned else ""
                 st.markdown(f'<div class="memo-item" style="{bs}">{memo["content"][:120]}{"..." if len(memo["content"])>120 else ""}<div class="memo-time">{format_dt(memo["created_at"])}</div></div>', unsafe_allow_html=True)
             with cp:
-                if st.button("📌", key=f"pin_{memo['id']}", help="고정 토글"): toggle_pin_memo(memo['id'], is_pinned); st.rerun()
+                if st.button("고정", key=f"pin_{memo['id']}", help="고정 토글"): toggle_pin_memo(memo['id'], is_pinned); st.rerun()
             with cd:
-                if st.button("🗑", key=f"del_memo_{memo['id']}", help="삭제"): delete_memo(memo['id']); st.rerun()
+                if st.button("삭제", key=f"del_memo_{memo['id']}", help="삭제"): delete_memo(memo['id']); st.rerun()
 
     st.markdown("---")
     st.markdown('<div style="text-align:center;font-size:0.7rem;color:var(--gray-400);letter-spacing:1px;">MY AI DESK v3.0<br>CSR EDITION</div>', unsafe_allow_html=True)
