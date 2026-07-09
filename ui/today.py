@@ -69,30 +69,36 @@ def _tomorrow_deadline(task):
 
 
 def _render_task_card(task):
-    """카드: 제목 + 중요표시(우선순위) + 상대 기한 + [완료 ✓][내일로 →]."""
+    """카드: 제목 + 중요표시(우선순위) + 상대 기한 + 카드 내장 [완료 ✓][내일로 →].
+
+    st.container(key="tcard_<urgency>_<id>") 가 st-key-* 클래스를 얻으므로,
+    components.py 의 [class*="st-key-tcard_"] CSS 가 컨테이너 자체를 카드로 그린다.
+    버튼은 카드 내부에서 컴팩트 아웃라인(각 ~160px, 전폭 금지) — 상세는 CSS 참조.
+    """
     urgency, urgency_label = get_urgency(task.get("deadline"))
-    pi = PRIORITIES.get(task.get("priority", "중간"), "")
+    pri = task.get("priority", "중간")
     cat = task.get("category", "기타")
     dl_span = ("📅 " + format_dt(task["deadline"])) if task.get("deadline") else "📅 마감일 미지정"
     urg_html = f'<span class="urgency-tag urgency-{urgency}">{urgency_label}</span>' if urgency_label else ""
-    st.markdown(
-        f'<div class="task-card {urgency}"><div class="task-header">'
-        f'<span class="task-title">{pi} {task["title"]}</span>'
-        f'<div class="task-badges"><span class="badge badge-priority-{task.get("priority","중간")}">{task.get("priority","중간")}</span><span class="badge">{cat}</span></div>'
-        f'</div><div class="task-meta"><span>{dl_span}</span>{urg_html}</div></div>',
-        unsafe_allow_html=True,
-    )
-    b1, b2 = st.columns(2)
-    with b1:
-        if st.button("완료 ✓", key=f"today_done_{task['id']}", use_container_width=True, type="primary"):
-            complete_task(task)
-            st.toast("🎉 수고하셨습니다!")
-            _refresh()
-    with b2:
-        if st.button("내일로 →", key=f"today_postpone_{task['id']}", use_container_width=True):
-            postpone_task(task["id"], _tomorrow_deadline(task))
-            st.toast("📅 내일로 미뤘습니다")
-            _refresh()
+    with st.container(key=f"tcard_{urgency}_{task['id']}"):
+        st.markdown(
+            f'<div class="task-header">'
+            f'<span class="task-title">{task["title"]}</span>'
+            f'<div class="task-badges"><span class="badge badge-priority-{pri}">{pri}</span><span class="badge">{cat}</span></div>'
+            f'</div><div class="task-meta"><span>{dl_span}</span>{urg_html}</div>',
+            unsafe_allow_html=True,
+        )
+        b1, b2 = st.columns(2)
+        with b1:
+            if st.button("완료 ✓", key=f"today_done_{task['id']}", use_container_width=True):
+                complete_task(task)
+                st.toast("🎉 수고하셨습니다!")
+                _refresh()
+        with b2:
+            if st.button("내일로 →", key=f"today_postpone_{task['id']}", use_container_width=True):
+                postpone_task(task["id"], _tomorrow_deadline(task))
+                st.toast("📅 내일로 미뤘습니다")
+                _refresh()
 
 
 def _render_stat_filter(all_active, all_completed):

@@ -245,6 +245,53 @@ def inject_css():
         50% { border-color: var(--red); }
     }
 
+    /* ── 오늘 뷰 카드 컨테이너 (st.container key=tcard_*) ──
+       HTML 카드와 동일한 룩에 액션 버튼을 '카드 안'에 내장한다. */
+    [class*="st-key-tcard_"] {
+        background: var(--white);
+        border: 1px solid var(--gray-200);
+        border-left: 4px solid transparent;
+        border-radius: var(--radius-md);
+        padding: 12px 16px;
+        margin-bottom: 8px;
+        gap: 8px;
+    }
+    [class*="st-key-tcard_overdue"] { border-left-color: var(--red); background: var(--red-light); }
+    [class*="st-key-tcard_today"] { border-left-color: var(--orange); background: var(--orange-light); }
+    /* 카드 내 액션 버튼: 컴팩트 아웃라인, 전폭 금지(데스크톱 각 ~160px),
+       모바일에서도 2열 유지(스택 방지) + 터치 44px */
+    [class*="st-key-tcard_"] [data-testid="stHorizontalBlock"] {
+        flex-wrap: nowrap !important;
+        gap: 8px !important;
+    }
+    [class*="st-key-tcard_"] [data-testid="stColumn"] {
+        flex: 0 1 160px !important;
+        min-width: 120px !important;
+        width: auto !important;
+    }
+    [class*="st-key-tcard_"] .stButton > button {
+        width: 100%;
+        min-height: 44px;
+        padding: 4px 12px;
+        background: transparent;
+        font-size: 0.85rem;
+    }
+    /* 완료 = 액센트 아웃라인 / 내일로 = 중립 아웃라인 (진한 채움 금지) */
+    [class*="st-key-tcard_"] [data-testid="stColumn"]:nth-of-type(1) .stButton > button {
+        border: 1px solid var(--accent);
+        color: var(--accent);
+    }
+    [class*="st-key-tcard_"] [data-testid="stColumn"]:nth-of-type(1) .stButton > button:hover {
+        border-color: var(--accent-dark); color: var(--accent-dark); background: var(--accent-light);
+    }
+    [class*="st-key-tcard_"] [data-testid="stColumn"]:nth-of-type(2) .stButton > button {
+        border: 1px solid var(--gray-200);
+        color: var(--dark);
+    }
+    [class*="st-key-tcard_"] [data-testid="stColumn"]:nth-of-type(2) .stButton > button:hover {
+        border-color: var(--gray-400); background: var(--gray-100);
+    }
+
     /* ── 빈 상태 ── */
     .empty-state {
         text-align: center;
