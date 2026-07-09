@@ -390,9 +390,14 @@ def test_format_duration_compact_golden():
 def test_login_polish(fake_db):
     css_src = (ROOT / "ui" / "components.py").read_text(encoding="utf-8")
     assert "text-indent: 0.09em" in css_src  # 광학 중심 보정
+    # [2.3-E] 주입 스크립트는 st.iframe 용 정적 자산으로 이동 + MutationObserver 상시 감시
+    pad_src = (ROOT / "ui" / "assets" / "numeric_pad.html").read_text(encoding="utf-8")
+    for attr in ("inputmode", "numeric", "pattern", "[0-9]*", "maxlength", "MutationObserver"):
+        assert attr in pad_src, f"숫자 패드 속성/감시 '{attr}' 누락"
     app_src = (ROOT / "app.py").read_text(encoding="utf-8")
-    for attr in ("inputmode", "numeric", "pattern", "[0-9]*", "maxlength"):
-        assert attr in app_src, f"숫자 패드 속성 '{attr}' 미주입"
+    assert "st.iframe" in app_src and "numeric_pad.html" in app_src
+    # [2.3-C] deprecated API 미사용
+    assert "components.v1" not in app_src and "components.html" not in app_src
     # 주입 실패와 무관하게 로그인 자체 동작 (기존 login 플로우 재확인)
     at = _login(_make_apptest())
     assert at.session_state["authenticated"] is True
