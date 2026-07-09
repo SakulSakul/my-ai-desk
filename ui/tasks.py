@@ -61,7 +61,7 @@ def render_task_form():
             with rc4: npri = st.selectbox("우선순위", list(PRIORITIES.keys()), index=1, format_func=lambda x: f"{PRIORITIES[x]} {x}")
             with rc5: nrec = RECURRENCE_OPTIONS[st.selectbox("반복", list(RECURRENCE_OPTIONS.keys()), index=0)]
             ntg = st.text_input("🏷️ 태그", placeholder="#급함 #보고용 #협력사")
-            submitted = st.form_submit_button("📌 업무 등록", use_container_width=True, type="primary")
+            submitted = st.form_submit_button("업무 등록", use_container_width=True, type="primary")
             if submitted:
                 if nt.strip():
                     dl = None
@@ -124,12 +124,12 @@ def render_task_list(search_query):
                     # 원클릭 완료 + 상세 버튼
                     ac1, ac2, ac3 = st.columns([1, 1, 4])
                     with ac1:
-                        if st.button("✅ 완료", key=f"quick_{tab_category}_{task['id']}", use_container_width=True):
+                        if st.button("완료", key=f"quick_{tab_category}_{task['id']}", type="primary"):
                             complete_task(task)
                             st.toast("🎉 완료! 다음 회차 생성됨" if rec else "🎉 수고하셨습니다!")
                             st.balloons(); st.rerun()
                     with ac2:
-                        if st.button("✏️ 수정", key=f"edit_{tab_category}_{task['id']}", use_container_width=True):
+                        if st.button("수정", key=f"edit_{tab_category}_{task['id']}"):
                             st.session_state[f"editing_{task['id']}"] = True; st.rerun()
 
                     with st.expander(f"상세 · {task['title']}", expanded=False):
@@ -142,18 +142,18 @@ def render_task_list(search_query):
                         hs = bool(task.get("timer_started_at")); he = bool(task.get("timer_ended_at")); ir = hs and not he
                         with tc1:
                             if not hs:
-                                if st.button("▶️ 시작", key=f"ts_{tab_category}_{task['id']}", use_container_width=True): start_timer(task["id"]); st.toast("⏱ 시작!"); st.rerun()
+                                if st.button("시작", key=f"ts_{tab_category}_{task['id']}"): start_timer(task["id"]); st.toast("⏱ 시작!"); st.rerun()
                             elif ir: st.markdown(f"🔴 **진행 중** · {format_duration_compact(calc_duration_minutes(task['timer_started_at'],now_kst().isoformat()))}")
                             else: st.markdown(f"✅ **기록 완료** · {format_duration_compact(calc_duration_minutes(task['timer_started_at'],task['timer_ended_at']))}")
                         with tc2:
                             if ir:
-                                if st.button("⏹ 정지", key=f"tp_{tab_category}_{task['id']}", use_container_width=True): stop_timer(task["id"]); st.toast("⏱ 정지!"); st.rerun()
+                                if st.button("정지", key=f"tp_{tab_category}_{task['id']}"): stop_timer(task["id"]); st.toast("⏱ 정지!"); st.rerun()
                         with tc3:
                             if hs:
-                                if st.button("🔄 초기화", key=f"tr_{tab_category}_{task['id']}", use_container_width=True): reset_timer(task["id"]); st.toast("초기화!"); st.rerun()
+                                if st.button("초기화", key=f"tr_{tab_category}_{task['id']}"): reset_timer(task["id"]); st.toast("초기화!"); st.rerun()
 
                         st.markdown("---")
-                        if st.button("🗑️ 삭제", key=f"del_{tab_category}_{task['id']}"): delete_task(task["id"]); st.toast("삭제됨."); st.rerun()
+                        if st.button("삭제", key=f"del_{tab_category}_{task['id']}"): delete_task(task["id"]); st.toast("삭제됨."); st.rerun()
 
                         if st.session_state.get(f"editing_{task['id']}"):
                             st.markdown("---")
@@ -176,13 +176,13 @@ def render_task_list(search_query):
                             etg=st.text_input("🏷️ 태그",value=task.get("tags",""),key=f"etag_{tab_category}_{task['id']}")
                             sc1,sc2=st.columns(2)
                             with sc1:
-                                if st.button("💾 저장",key=f"save_{tab_category}_{task['id']}",use_container_width=True,type="primary"):
+                                if st.button("저장",key=f"save_{tab_category}_{task['id']}",type="primary"):
                                     ddl=None
                                     if edt: ddl=datetime.combine(edt,etm if etm else dt_time(18,0)).replace(tzinfo=KST)
                                     update_task(task["id"],et,ed,ddl,ect,epr,erc,", ".join(parse_tags(etg)))
                                     st.session_state[f"editing_{task['id']}"]=False; st.toast("✅ 수정 완료!"); st.rerun()
                             with sc2:
-                                if st.button("취소",key=f"cancel_{tab_category}_{task['id']}",use_container_width=True): st.session_state[f"editing_{task['id']}"]=False; st.rerun()
+                                if st.button("취소",key=f"cancel_{tab_category}_{task['id']}"): st.session_state[f"editing_{task['id']}"]=False; st.rerun()
 
 
 def render_completed_tasks():
@@ -197,10 +197,10 @@ def render_completed_tasks():
                 tags=parse_tags(c.get("tags")); tb=" ".join(f'<span class="badge-tag">#{t}</span>' for t in tags[:3])
                 tm=calc_duration_minutes(c.get("timer_started_at"),c.get("timer_ended_at"))
                 ts=f" · ⏱ {format_duration_compact(tm)}" if tm>0 else ""
-                cc = (f'<div class="task-card completed-card"><div class="task-header"><span class="task-title" style="text-decoration:line-through;">{pi} {c["title"]}</span><div class="task-badges"><span class="badge badge-cat-{c.get("category","기타")}">{c.get("category","기타")}</span>{tb}</div></div><div class="task-meta"><span>완료: {format_dt(c["completed_at"])}</span>{"<span>⏱ "+dur+"</span>" if dur else ""}<span>{ts}</span></div></div>')
+                cc = (f'<div class="task-card completed-card"><div class="task-header"><span class="task-title" style="text-decoration:line-through;">{c["title"]}</span><div class="task-badges"><span class="badge badge-cat-{c.get("category","기타")}">{c.get("category","기타")}</span>{tb}</div></div><div class="task-meta"><span>완료: {format_dt(c["completed_at"])}</span>{"<span>⏱ "+dur+"</span>" if dur else ""}<span>{ts}</span></div></div>')
                 st.markdown(cc, unsafe_allow_html=True)
                 cr1,cr2=st.columns(2)
                 with cr1:
-                    if st.button("↩️ 되돌리기",key=f"undo_{c['id']}"): uncomplete_task(c["id"]); st.rerun()
+                    if st.button("되돌리기",key=f"undo_{c['id']}"): uncomplete_task(c["id"]); st.rerun()
                 with cr2:
-                    if st.button("🗑️ 삭제",key=f"cdel_{c['id']}"): delete_task(c["id"]); st.rerun()
+                    if st.button("삭제",key=f"cdel_{c['id']}"): delete_task(c["id"]); st.rerun()

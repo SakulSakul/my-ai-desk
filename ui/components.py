@@ -64,13 +64,45 @@ def inject_css():
     }
     .stApp > header { background: transparent; }
 
-    /* 버튼 — 모바일 터치 타겟 */
+    /* ── 버튼 전역 규칙 [2.3-D 디자인 규칙 승격] — 오늘 뷰 아웃라인 체계를 전 화면 적용.
+       기본(보조)=중립 아웃라인 / primary(완료·저장·추가·로그인)=액센트 아웃라인 /
+       파괴적(삭제, 키 접두 del_·cdel_)=레드 아웃라인. 채움 금지, 터치 44px. */
     .stButton > button, .stFormSubmitButton > button {
         border-radius: var(--radius);
         font-family: var(--font-sans);
         font-weight: 500;
         min-height: 44px;
         white-space: normal;
+        background: transparent;
+        border: 1px solid var(--gray-200);
+        color: var(--dark);
+    }
+    .stButton > button:hover, .stFormSubmitButton > button:hover {
+        border-color: var(--gray-400);
+        background: var(--gray-100);
+        color: var(--dark);
+    }
+    .stButton > button[kind*="primary"], .stFormSubmitButton > button[kind*="primary"] {
+        background: transparent;
+        border: 1px solid var(--accent);
+        color: var(--accent);
+    }
+    .stButton > button[kind*="primary"]:hover, .stFormSubmitButton > button[kind*="primary"]:hover {
+        border-color: var(--accent-dark);
+        color: var(--accent-dark);
+        background: var(--accent-light);
+    }
+    .stButton > button:active, .stButton > button:focus:not(:focus-visible) {
+        color: inherit;
+    }
+    [class*="st-key-del_"] .stButton > button, [class*="st-key-cdel_"] .stButton > button {
+        border-color: var(--red);
+        color: var(--red);
+    }
+    [class*="st-key-del_"] .stButton > button:hover, [class*="st-key-cdel_"] .stButton > button:hover {
+        border-color: var(--red);
+        color: var(--red);
+        background: var(--red-light);
     }
 
     /* ── 헤더 영역 ── */
@@ -296,21 +328,7 @@ def inject_css():
         background: transparent;
         font-size: 0.85rem;
     }
-    /* 완료 = 액센트 아웃라인 / 내일로 = 중립 아웃라인 (진한 채움 금지) */
-    [class*="st-key-tcard_"] [data-testid="stColumn"]:nth-of-type(1) .stButton > button {
-        border: 1px solid var(--accent);
-        color: var(--accent);
-    }
-    [class*="st-key-tcard_"] [data-testid="stColumn"]:nth-of-type(1) .stButton > button:hover {
-        border-color: var(--accent-dark); color: var(--accent-dark); background: var(--accent-light);
-    }
-    [class*="st-key-tcard_"] [data-testid="stColumn"]:nth-of-type(2) .stButton > button {
-        border: 1px solid var(--gray-200);
-        color: var(--dark);
-    }
-    [class*="st-key-tcard_"] [data-testid="stColumn"]:nth-of-type(2) .stButton > button:hover {
-        border-color: var(--gray-400); background: var(--gray-100);
-    }
+    /* 완료=액센트/내일로=중립은 전역 kind 규칙이 담당(완료 버튼=primary) */
 
     /* ── 빈 상태 ── */
     .empty-state {

@@ -327,8 +327,10 @@ def test_today_card_buttons_in_card(fake_db):
     assert '[class*="st-key-tcard_"]' in css_src
     assert "flex: 0 1 160px" in css_src
     assert "flex-wrap: nowrap" in css_src
-    # 진한 채움 금지: 완료=액센트 아웃라인 (type=primary 미사용)
-    assert 'st.button("완료 ✓"' in today_src and 'type="primary"' not in today_src.split('st.button("완료 ✓"')[1][:120]
+    # 진한 채움 금지: primary=액센트 '아웃라인'을 전역 CSS 가 보장 [2.3-D 규칙]
+    assert 'st.button("완료 ✓"' in today_src
+    primary_rule = css_src.split('button[kind*="primary"] {')[1][:200]
+    assert "background: transparent" in primary_rule, "primary 버튼이 채움 스타일"
     # 기능 동작(완료/내일로)은 기존 test_today_*_action 이 검증
     at = _login(_make_apptest())
     assert at.button(key="today_done_1") is not None
