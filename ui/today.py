@@ -84,7 +84,7 @@ def _render_task_card(task):
         st.markdown(
             f'<div class="task-header">'
             f'<span class="task-title">{task["title"]}</span>'
-            f'<div class="task-badges"><span class="badge badge-priority-{pri}">{pri}</span><span class="badge">{cat}</span></div>'
+            f'<div class="task-badges"><span class="badge badge-priority-{pri}">{pri}</span><span class="badge badge-cat-{cat}">{cat}</span></div>'
             f'</div><div class="task-meta"><span>{dl_span}</span>{urg_html}</div>',
             unsafe_allow_html=True,
         )
