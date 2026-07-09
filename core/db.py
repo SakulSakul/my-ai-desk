@@ -49,8 +49,9 @@ def load_all_tasks():
     return (supabase.table("tasks").select("*").order("deadline", desc=False).execute()).data or []
 
 @safe_db_call
-def add_task(title, description, deadline, category, priority="중간", recurrence=None, tags=""):
-    data = {"title": title, "description": description, "deadline": deadline.isoformat() if deadline else None, "category": category, "priority": priority, "recurrence": recurrence, "tags": tags, "is_completed": False, "timer_started_at": now_kst().isoformat()}
+def add_task(title, description, deadline, category, priority="중간", recurrence=None, tags="", source="form"):
+    # source: 'form'(기존 등록 폼) | 'quick'(오늘 뷰 빠른 추가) — tasks.source 컬럼(default 'form')에 기록
+    data = {"title": title, "description": description, "deadline": deadline.isoformat() if deadline else None, "category": category, "priority": priority, "recurrence": recurrence, "tags": tags, "is_completed": False, "timer_started_at": now_kst().isoformat(), "source": source}
     supabase.table("tasks").insert(data).execute()
 
 @safe_db_call
@@ -75,6 +76,10 @@ def delete_task(task_id): supabase.table("tasks").delete().eq("id", task_id).exe
 @safe_db_call
 def update_task(task_id, title, description, deadline, category, priority="중간", recurrence=None, tags=""):
     supabase.table("tasks").update({"title": title, "description": description, "deadline": deadline.isoformat() if deadline else None, "category": category, "priority": priority, "recurrence": recurrence, "tags": tags}).eq("id", task_id).execute()
+@safe_db_call
+def postpone_task(task_id, new_deadline):
+    """기한만 갱신 (오늘 뷰 [내일로 →] 액션용) [Phase 2 신규]."""
+    supabase.table("tasks").update({"deadline": new_deadline.isoformat() if new_deadline else None}).eq("id", task_id).execute()
 @safe_db_call
 def start_timer(task_id): supabase.table("tasks").update({"timer_started_at": now_kst().isoformat(), "timer_ended_at": None}).eq("id", task_id).execute()
 @safe_db_call

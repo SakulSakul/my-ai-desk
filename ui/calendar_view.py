@@ -62,5 +62,5 @@ def render_calendar():
             st.markdown('<div style="display:flex;gap:1rem;justify-content:center;margin-top:0.6rem;font-size:0.68rem;color:var(--gray-400);"><span><span class="cal-dot cal-dot-overdue" style="display:inline-block;"></span> 기한초과</span><span><span class="cal-dot cal-dot-today" style="display:inline-block;"></span> 오늘</span><span><span class="cal-dot cal-dot-upcoming" style="display:inline-block;"></span> 예정</span><span><span class="cal-dot cal-dot-completed" style="display:inline-block;"></span> 완료</span></div>', unsafe_allow_html=True)
         with ct2:
             wd = now.date().weekday(); mon = now.date()-timedelta(days=wd); sun = mon+timedelta(days=6)
-            st.markdown(f'<div style="text-align:center;font-family:var(--font-serif);font-size:1rem;font-weight:600;color:var(--black);margin-bottom:0.5rem;">{mon.strftime("%m/%d")} — {sun.strftime("%m/%d")} 이번 주</div>', unsafe_allow_html=True)
+            st.markdown(f'<div style="text-align:center;font-family:var(--font-serif);font-size:1rem;font-weight:700;color:var(--black);margin-bottom:0.5rem;">{mon.strftime("%m/%d")} — {sun.strftime("%m/%d")} 이번 주</div>', unsafe_allow_html=True)
             st.markdown(render_weekly_view(tdm), unsafe_allow_html=True)
