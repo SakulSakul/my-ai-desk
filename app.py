@@ -4,6 +4,7 @@
 로직은 core/(db·models), 화면은 ui/ 에 있다. 사이드바는 사용하지 않는다.
 """
 import streamlit as st
+import streamlit.components.v1 as components
 
 from core.models import now_kst
 # core.db import 시점에 Supabase 클라이언트가 생성된다(set_page_config 이전).
@@ -45,12 +46,35 @@ init_session_state()
 
 
 # ── 비밀번호 잠금 ──
+def _inject_numeric_pad():
+    """비밀번호 입력에 모바일 숫자 패드 속성 부여 [Phase 2.2-F].
+
+    password 타입(마스킹)은 유지한 채 inputmode/pattern/maxlength 만 JS 로 주입.
+    components.html iframe 은 same-origin 이라 parent DOM 접근 가능.
+    주입 실패 시(셀렉터 미스 등) 일반 키보드로 무해 폴백 — 로그인 로직과 무관.
+    """
+    components.html(
+        """<script>
+        try {
+            const inp = window.parent.document.querySelector('input[type="password"]');
+            if (inp) {
+                inp.setAttribute('inputmode', 'numeric');
+                inp.setAttribute('pattern', '[0-9]*');
+                inp.setAttribute('maxlength', '4');
+            }
+        } catch (e) { /* 폴백: 일반 키보드 */ }
+        </script>""",
+        height=0,
+    )
+
+
 def check_password():
     if st.session_state.authenticated: return True
     # 가운데 축 단일화(Phase 2.1): 컬럼 분할 없이 단일 축 — 폭 제한(380px)은
     # components.py 의 `.stApp:has(.login-wrap) .block-container` CSS 가 담당.
     st.markdown('<div class="login-wrap"><h1>My AI Desk</h1><p>CSR · Task Manager</p></div>', unsafe_allow_html=True)
     pwd = st.text_input("비밀번호", type="password", key="pwd_input")
+    _inject_numeric_pad()
     if st.button("로그인", use_container_width=True, type="primary"):
         if pwd == APP_PASSWORD: st.session_state.authenticated = True; st.rerun()
         else: st.error("비밀번호가 틀렸습니다.")

@@ -476,6 +476,7 @@ def inject_css():
     .login-wrap p {
         color: var(--gray-400); font-size: 0.85rem; font-weight: 500;
         letter-spacing: 0.09em; text-transform: uppercase;
+        text-indent: 0.09em; /* 자간 후행 여백으로 인한 좌측 편이 상쇄 → 광학 중심 일치 */
         margin: 0;
     }
     /* 로그인 폼(인증 게이트에서만 렌더): 가운데 단일 축, 최대폭 380px */
