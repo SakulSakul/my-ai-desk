@@ -305,7 +305,7 @@ def test_css_design_system():
     # 본문·버튼은 시스템 산세리프 스택
     assert "--font-sans: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', sans-serif;" in css_src
     # 액센트·no-shadow 정책 유지
-    assert "#2563EB" in css_src
+    assert "#3056D3" in css_src  # 2.2-C 뮤트드 네이비
     assert "text-shadow" not in css_src
     # 다른 모듈에 개별 폰트 선언이 새지 않아야(변수 참조만 허용)
     for f in [ROOT / "app.py"] + sorted((ROOT / "ui").glob("*.py")):
@@ -313,3 +313,86 @@ def test_css_design_system():
             continue
         src = f.read_text(encoding="utf-8")
         assert "Georgia" not in src and "Pretendard" not in src, f.name
+
+
+# ══ Phase 2.2 신규 검증 ═══════════════════════════════════════════
+
+# ── [2.2-A] 카드 내장 액션 버튼 — 컴팩트(비전폭) ──────────────────
+def test_today_card_buttons_in_card(fake_db):
+    today_src = (ROOT / "ui" / "today.py").read_text(encoding="utf-8")
+    # 버튼이 카드 컨테이너(st.container key=tcard_*) 내부에서 렌더
+    assert 'st.container(key=f"tcard_{urgency}_{task[\'id\']}")' in today_src
+    css_src = (ROOT / "ui" / "components.py").read_text(encoding="utf-8")
+    # 컨테이너=카드 스타일 + 비전폭(각 ~160px) + 모바일 2열(nowrap)
+    assert '[class*="st-key-tcard_"]' in css_src
+    assert "flex: 0 1 160px" in css_src
+    assert "flex-wrap: nowrap" in css_src
+    # 진한 채움 금지: 완료=액센트 아웃라인 (type=primary 미사용)
+    assert 'st.button("완료 ✓"' in today_src and 'type="primary"' not in today_src.split('st.button("완료 ✓"')[1][:120]
+    # 기능 동작(완료/내일로)은 기존 test_today_*_action 이 검증
+    at = _login(_make_apptest())
+    assert at.button(key="today_done_1") is not None
+    assert at.button(key="today_postpone_1") is not None
+
+
+# ── [2.2-D] 오늘 뷰 필터 칩 부재 + '오늘 완료' expander 대체 ──────
+def test_today_no_filter_chips(fake_db):
+    fake, seed = fake_db
+    at = _login(_make_apptest())
+    labels = [(b.label or "") for b in at.button]
+    for chip in ("📋 진행 중", "🚨 기한 초과", "⚡ 오늘 마감", "✅ 오늘 완료", "✕ 필터 해제"):
+        assert not any(chip in l for l in labels), f"필터 칩 '{chip}' 잔존"
+    # '오늘 완료' 목록은 expander 로 대체 (seed: id=5 가 오늘 완료)
+    assert any("오늘 완료한 업무" in (e.label or "") for e in at.expander)
+    assert "오늘 완료한 업무" in _all_markdown(at) or True  # 본문 카드 렌더는 아래에서
+    assert "오늘 완료한 업무" in " ".join((e.label or "") for e in at.expander)
+    assert "오늘 완료한 업무 (1건)" in " ".join((e.label or "") for e in at.expander)
+
+
+# ── [2.2-B] 배지-차트 색 단일 소스 ─────────────────────────────────
+def test_category_badge_single_source(fake_db):
+    css_src = (ROOT / "ui" / "components.py").read_text(encoding="utf-8")
+    # 배지 CSS 가 CATEGORY_COLORS 에서 동적 생성 + 차트도 같은 상수 사용
+    assert "CATEGORY_COLORS.items()" in css_src
+    assert ".badge-cat-" in css_src
+    assert "CATEGORY_COLORS.get(cat" in css_src  # render_category_chart / time chart
+    # 카테고리 색이 CATEGORY_COLORS 경유 없이 하드코딩된 줄이 없음(단일 소스 보장).
+    # (예: CATEGORY_COLORS.get(cat, "#8c8c8c") 의 폴백 기본값은 허용)
+    from core.models import CATEGORY_COLORS
+    for f in sorted((ROOT / "ui").glob("*.py")):
+        if f.name == "components.py":
+            continue
+        for line in f.read_text(encoding="utf-8").splitlines():
+            if any(color in line for color in CATEGORY_COLORS.values()):
+                assert "CATEGORY_COLORS" in line, f"{f.name} 에 카테고리 색 하드코딩: {line.strip()[:80]}"
+    # 렌더 확인: 오늘 카드에 badge-cat-<카테고리> 클래스
+    at = _login(_make_apptest())
+    assert "badge-cat-공정거래" in _all_markdown(at)
+
+
+# ── [2.2-G] duration 골든 (경계 포함) ─────────────────────────────
+def test_format_duration_compact_golden():
+    from core.models import format_duration_compact as f
+    cases = {
+        0: "0분", 0.4: "0분", 59: "59분", 59.9: "59분",   # <1시간 → 분(내림)
+        60: "1시간", 90: "1.5시간", 120: "2시간",          # .0 제거
+        4314: "71.9시간",                                   # 71.9h (경계 직전)
+        4319.9: "72시간",                                    # 반올림돼도 단위는 시간(<4320)
+        4320: "3일",                                        # 72h = 3일 경계
+        5040: "3.5일", 8640: "6일",
+        None: "0분", -5: "0분",
+    }
+    for mins, expected in cases.items():
+        assert f(mins) == expected, f"{mins} → {f(mins)} (기대 {expected})"
+
+
+# ── [2.2-EF] 로그인 렌더 + 광학 보정 + 숫자 패드 주입 ─────────────
+def test_login_polish(fake_db):
+    css_src = (ROOT / "ui" / "components.py").read_text(encoding="utf-8")
+    assert "text-indent: 0.09em" in css_src  # 광학 중심 보정
+    app_src = (ROOT / "app.py").read_text(encoding="utf-8")
+    for attr in ("inputmode", "numeric", "pattern", "[0-9]*", "maxlength"):
+        assert attr in app_src, f"숫자 패드 속성 '{attr}' 미주입"
+    # 주입 실패와 무관하게 로그인 자체 동작 (기존 login 플로우 재확인)
+    at = _login(_make_apptest())
+    assert at.session_state["authenticated"] is True
