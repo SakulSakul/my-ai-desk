@@ -28,8 +28,10 @@ import sys
 import time
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+from urllib.request import Request
 from urllib.error import HTTPError, URLError
+
+from _http import urlopen_once, urlopen_with_retry  # 워크플로는 `python jobs/x.py` 실행 → jobs/ 가 sys.path[0]
 
 def _die(msg: str) -> None:
     print(f"[kakao] FAIL: {msg}", file=sys.stderr)
@@ -62,13 +64,14 @@ SECRET_KEY_NAME = "kakao_refresh_token"
 
 
 def supabase_get(table: str, params: str = "", key: str | None = None):
+    # 조회(GET)는 멱등 — 재시도 적용. 07-23 알림 유실이 정확히 이 지점의 타임아웃이었다.
     key = key or SUPABASE_KEY
     req = Request(f"{SUPABASE_URL}/rest/v1/{table}?{params}")
     req.add_header("apikey", key)
     req.add_header("Authorization", f"Bearer {key}")
     req.add_header("Accept", "application/json")
-    with urlopen(req, timeout=15) as resp:
-        return json.loads(resp.read().decode())
+    result = urlopen_with_retry(req, label=f"supabase_get({table})")
+    return json.loads(result.body.decode())
 
 
 def read_secret(name: str) -> str:
@@ -99,8 +102,9 @@ def write_secret(name: str, value: str, retries: int = 3) -> None:
             req.add_header("Authorization", f"Bearer {SUPABASE_SERVICE_ROLE_KEY}")
             req.add_header("Content-Type", "application/json")
             req.add_header("Prefer", "return=representation")  # 갱신된 행 반환 → 검증용
-            with urlopen(req, timeout=15) as resp:
-                updated = json.loads(resp.read().decode() or "[]")
+            # 이 함수는 자체 재시도(+저장 검증)를 이미 갖고 있다 — 이중 재시도가 되지
+            # 않도록 단일 시도 호출을 쓰고, 타임아웃 상향만 공유한다.
+            updated = json.loads(urlopen_once(req).body.decode() or "[]")
             if not updated:
                 raise RuntimeError(f"PATCH가 0행 갱신 (key='{name}' 부재?) — 저장 안 됨")
             if updated[0].get("value") != value:
@@ -128,8 +132,10 @@ def get_access_token(refresh_token: str):
     data = urlencode(params).encode()
     req = Request("https://kauth.kakao.com/oauth/token", data=data)
     req.add_header("Content-Type", "application/x-www-form-urlencoded")
-    with urlopen(req, timeout=15) as resp:
-        result = json.loads(resp.read().decode())
+    # 토큰 갱신 POST 는 멱등(같은 refresh token 재제출) — 재시도 적용.
+    # 단 4xx(KOE001/KOE011 등 자격증명 오류)는 헬퍼가 즉시 전파하므로
+    # main() 의 HTTPError 진단 핸들러가 그대로 작동한다.
+    result = json.loads(urlopen_with_retry(req, label="kakao_token").body.decode())
     return result["access_token"], result.get("refresh_token")
 
 
@@ -143,8 +149,9 @@ def send_kakao(message: str, access_token: str):
     req = Request("https://kapi.kakao.com/v2/api/talk/memo/default/send", data=data)
     req.add_header("Authorization", f"Bearer {access_token}")
     req.add_header("Content-Type", "application/x-www-form-urlencoded")
-    with urlopen(req, timeout=15) as resp:
-        result = json.loads(resp.read().decode())
+    # ★ 발송은 비멱등 — 재시도 금지. 타임아웃이 나도 카카오 서버는 이미 메시지를
+    #   보냈을 수 있어 재시도 = 중복 발송이 된다. 타임아웃만 20초로 올리고 단일 시도.
+    result = json.loads(urlopen_once(req).body.decode())
     # 200 이어도 result_code != 0 이면 미도달 → 실패로 승격(조용한 미도달 방지)
     if result.get("result_code") not in (0, "0"):
         _die(f"카카오 발송 응답 이상: {result}")

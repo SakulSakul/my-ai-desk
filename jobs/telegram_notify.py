@@ -6,8 +6,10 @@ GitHub Actions에서 매일 아침 실행되어, 오늘 할 일을 텔레그램�
 import os
 import json
 from datetime import datetime, timedelta, timezone
-from urllib.request import Request, urlopen
+from urllib.request import Request
 from urllib.parse import quote
+
+from _http import urlopen_once, urlopen_with_retry  # 워크플로는 `python jobs/x.py` 실행 → jobs/ 가 sys.path[0]
 
 # ============================================
 # 환경 변수에서 설정값 읽기 (GitHub Secrets)
@@ -21,14 +23,14 @@ KST = timezone(timedelta(hours=9))
 
 
 def supabase_get(table, params=""):
-    """Supabase REST API로 데이터 조회"""
+    """Supabase REST API로 데이터 조회 (멱등 — 재시도 적용, 타임아웃 명시)"""
     url = f"{SUPABASE_URL}/rest/v1/{table}?{params}"
     req = Request(url)
     req.add_header("apikey", SUPABASE_KEY)
     req.add_header("Authorization", f"Bearer {SUPABASE_KEY}")
     req.add_header("Content-Type", "application/json")
-    with urlopen(req) as resp:
-        return json.loads(resp.read().decode())
+    result = urlopen_with_retry(req, label=f"supabase_get({table})")
+    return json.loads(result.body.decode())
 
 
 def send_telegram(message):
@@ -39,8 +41,9 @@ def send_telegram(message):
         f"&text={quote(message)}&parse_mode=HTML"
     )
     req = Request(url)
-    with urlopen(req) as resp:
-        return json.loads(resp.read().decode())
+    # ★ 발송은 비멱등 — 재시도 금지. 타임아웃이어도 텔레그램 서버는 이미 보냈을 수
+    #   있어 재시도 = 중복 발송. 타임아웃만 두고 단일 시도.
+    return json.loads(urlopen_once(req).body.decode())
 
 
 def main():
