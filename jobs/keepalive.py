@@ -26,6 +26,8 @@ import sys
 import urllib.error
 import urllib.request
 
+from _http import urlopen_with_retry  # 워크플로는 `python jobs/x.py` 실행 → jobs/ 가 sys.path[0]
+
 
 def _fail(msg: str) -> None:
     print(f"[keepalive] FAIL: {msg}", file=sys.stderr)
@@ -47,9 +49,10 @@ def main() -> None:
     req.add_header("Accept", "application/json")
 
     try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            status = resp.status
-            body = resp.read(512)  # 응답 본문은 확인용 소량만
+        # 핑(GET)은 멱등 — 재시도 적용. 가디언이 단발 지연으로 죽으면
+        # 지키려던 대상(무료티어 pause 방지)이 무너진다.
+        result = urlopen_with_retry(req, label="keepalive")
+        status, body = result.status, result.body[:512]  # 본문은 확인용 소량만
     except urllib.error.HTTPError as exc:
         _fail(f"Supabase 핑 HTTP {exc.code}: {exc.reason}")
     except urllib.error.URLError as exc:
